@@ -41,6 +41,7 @@ export default function LoginScreen({ navigation }) {
   };
 
   const handleButtonPress = async () => {
+    navigation.replace("Main");
     if (!isEmailEntered) {
       if (email === "") {
         Alert.alert("Error", "Por favor ingresa tu correo electrónico.");
