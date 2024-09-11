@@ -41,7 +41,7 @@ export default function LoginScreen({ navigation }) {
   };
 
   const handleButtonPress = async () => {
-    navigation.replace("Main");
+    
     if (!isEmailEntered) {
       if (email === "") {
         Alert.alert("Error", "Por favor ingresa tu correo electrónico.");
@@ -63,6 +63,7 @@ export default function LoginScreen({ navigation }) {
         console.log("Iniciando sesión...");
         console.log("Email:", email);
         console.log("Contraseña:", password);
+        navigation.replace("Main");
         const url = APIURL.senLogin();
         console.log("URL:", url);
         const response = await fetch(url, {
