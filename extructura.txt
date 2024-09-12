@@ -143,3 +143,10 @@ function MainApp() {
     </NavigationContainer>
   );
 }
+
+
+alert 
+Alert.alert(
+      "Card Pressed",
+      `Cliente: ${item.Cliente}\nCedula: ${item.Cedula}\nNumero Documento: ${item.Numero_Documento}\nValor Cobrado: $${item.Valor_Cobrado.toFixed(2)}`
+    );

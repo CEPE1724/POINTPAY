@@ -12,13 +12,16 @@ import {
   Platform,
   ScrollView,
   Animated,
+  ActivityIndicator, // Importar ActivityIndicator para mostrar el indicador de carga
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import logo from "../../assets/pointLogin.png";
 import { APIURL } from "../config/apiconfig";
-
-export default function LoginScreen({ navigation }) {
+import {KeyboardAwareScrollView} from "react-native-keyboard-aware-scroll-view";
+import { useNavigation } from "@react-navigation/native";
+export  function LoginScreen(props) {
+  const { navigation } = props;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isEmailEntered, setIsEmailEntered] = useState(false);
@@ -26,6 +29,7 @@ export default function LoginScreen({ navigation }) {
   const [isButtonEnabled, setIsButtonEnabled] = useState(false);
   const [isEmailEditing, setIsEmailEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // Estado para manejar la carga
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
   const { width, height } = Dimensions.get("window");
@@ -41,6 +45,7 @@ export default function LoginScreen({ navigation }) {
   };
 
   const handleButtonPress = async () => {
+    if (isLoading) return; // No permitir más clics mientras está cargando
     
     if (!isEmailEntered) {
       if (email === "") {
@@ -59,41 +64,43 @@ export default function LoginScreen({ navigation }) {
         Alert.alert("Error", "Por favor ingresa tus credenciales.");
         return;
       }
-      try {
-        console.log("Iniciando sesión...");
-        console.log("Email:", email);
-        console.log("Contraseña:", password);
-        navigation.replace("Main");
-        const url = APIURL.senLogin();
-        console.log("URL:", url);
-        const response = await fetch(url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ nombre: email, clave: password }),
-        });
-        console.log("Respuesta:", response);
-        const data = await response.json();
+      setIsLoading(true); // Activar el estado de carga
 
-        if (data.estado === "success") {
-          await AsyncStorage.setItem("userToken", data.token);
-          await AsyncStorage.setItem("userInfo", JSON.stringify(data.usuario));
-          // Redirige a AppNavigator después de un inicio de sesión exitoso
-          navigation.replace("Main");
-        } else {
-          Alert.alert("Error", data.message || "Credenciales incorrectas");
+      // Simular tiempo de carga adicional
+      setTimeout(async () => {
+        try {
+
+          const url = APIURL.senLogin();
+          const response = await fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ nombre: email, clave: password }),
+          });
+          const data = await response.json();
+
+          if (data.estado === "success") {
+            await AsyncStorage.setItem("userToken", data.token);
+            await AsyncStorage.setItem("userInfo", JSON.stringify(data.usuario));
+            // Redirige a AppNavigator después de un inicio de sesión exitoso
+            navigation.replace("Main");
+          } else {
+            Alert.alert("Error", data.message || "Credenciales incorrectas");
+          }
+        } catch (error) {
+          console.error(
+            "Error al realizar la solicitud de inicio de sesión:",
+            error
+          );
+          Alert.alert(
+            "Error",
+            "Hubo un problema al iniciar sesión. Inténtalo de nuevo."
+          );
+        } finally {
+          setIsLoading(false); // Desactivar el estado de carga
         }
-      } catch (error) {
-        console.error(
-          "Error al realizar la solicitud de inicio de sesión:",
-          error
-        );
-        Alert.alert(
-          "Error",
-          "Hubo un problema al iniciar sesión. Inténtalo de nuevo."
-        );
-      }
+      }, 3000); // Simular tiempo de espera adicional
     }
   };
 
@@ -152,13 +159,17 @@ export default function LoginScreen({ navigation }) {
         )}
 
         <TouchableOpacity
-          style={[styles.button, { opacity: isButtonEnabled ? 1 : 0.5 }]}
+          style={[styles.button, { opacity: isButtonEnabled && !isLoading ? 1 : 0.5 }]}
           onPress={handleButtonPress}
-          disabled={!isButtonEnabled}
+          disabled={!isButtonEnabled || isLoading} // Desactivar el botón mientras está cargando
         >
-          <Text style={styles.buttonText}>
-            {isEmailEntered ? "Iniciar sesión" : "Continuar"}
-          </Text>
+          {isLoading ? (
+            <ActivityIndicator size="small" color="#fff" /> // Mostrar indicador de carga
+          ) : (
+            <Text style={styles.buttonText}>
+              {isEmailEntered ? "Iniciar sesión" : "Continuar"}
+            </Text>
+          )}
         </TouchableOpacity>
 
         <Text style={styles.version}>V.1.0.0</Text>

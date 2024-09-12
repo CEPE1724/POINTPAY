@@ -1,32 +1,44 @@
 import React, { useState, useEffect } from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import SplashScreen from "../screens/SplashScreen";
-import DriveScreen from "../screens/DriveScreen";
-import HomeScreen from "../screens/HomeScreen";
-import LoginScreen from "../screens/LoginScreen";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Gestionstack } from "./Gestionstack";
+import { AccountStack } from "./AccountStack";
+import { Registrostack } from "./Registrostack"; 
 import { Icon } from "react-native-elements";
 import { screen } from "../utils";
+import SplashScreen from "../screens/SplashScreen";
+import {LoginScreen} from "../screens/LoginScreen";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const TabNavigator = () => (
   <Tab.Navigator
     screenOptions={({ route }) => ({
+      headerShown: false,
       tabBarActiveTintColor: "#022b58",
       tabBarInactiveTintColor: "#8f9bb3",
       tabBarIcon: ({ color, size }) => screenOptions(route, color, size),
     })}
   >
     <Tab.Screen 
-    name={screen.drive.tab} 
-    component={DriveScreen} 
-    options={{ title: "Drive" }}
+      name={screen.drive.tab} 
+      component={Gestionstack} 
+      options={{ title: "Inicio" }}
     />
-    <Tab.Screen name={screen.home.tab} 
-    component={HomeScreen} 
-    options={{ title: "Home" }}
+    <Tab.Screen 
+      name={screen.registro.tab} 
+      component={Registrostack} 
+      options={{ title: "Registros" }}
+    />
+    <Tab.Screen 
+      name={screen.home.tab} 
+      component={AccountStack} 
+      options={{ 
+        tabBarStyle: { display: 'none' },
+        title: "Cuenta" // Oculta la barra de pestañas en LoginScreen
+      }}
     />
   </Tab.Navigator>
 );
@@ -34,10 +46,13 @@ const TabNavigator = () => (
 function screenOptions(route, color, size) {
   let iconName;
   if (route.name === screen.home.tab) {
-    iconName = "home-outline";
+    iconName = "account-circle";
   }
   if (route.name === screen.drive.tab) {
-    iconName = "car";
+    iconName = "home";
+  }
+  if (route.name === screen.registro.tab) {
+    iconName = "book";
   }
   return (
     <Icon type="material-community" name={iconName} color={color} size={size} />
@@ -57,12 +72,15 @@ export function AppNavigator() {
 
   useEffect(() => {
     const checkLoginStatus = async () => {
-      // Simula la verificación del token o del estado de inicio de sesión
-      setTimeout(async () => {
+      try {
+        // Simula la verificación del token o del estado de inicio de sesión
         const token = await AsyncStorage.getItem("userToken");
         setIsLoggedIn(!!token); // Cambia esto según el estado real de autenticación
+      } catch (error) {
+        console.error("Error checking login status:", error);
+      } finally {
         setIsCheckingAuth(false); // Indica que la verificación ha terminado
-      }, 5000); // Ajusta este tiempo según necesites
+      }
     };
 
     checkLoginStatus();
