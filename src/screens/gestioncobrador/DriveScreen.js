@@ -1,81 +1,68 @@
 // src/screens/DriveScreen.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, Button } from 'react-native';
-import axios from 'axios'; // Asegúrate de haber instalado axios
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from "@react-navigation/native";
-import { screen } from "../../utils/screenName";
-import { APIURL } from "../../config/apiconfig";
+import { useNavigation } from '@react-navigation/native';
+import { screen } from '../../utils/screenName';
+import { APIURL } from '../../config/apiconfig';
+import Icon from 'react-native-vector-icons/MaterialIcons'; // Import vector icons
 
 export function DriveScreen(props) {
   const { navigation } = props;
   const [totalAmount, setTotalAmount] = useState('$0.00');
   const [numberOfClients, setNumberOfClients] = useState(0);
   const [totalProjected, setTotalProjected] = useState(0);
+  const [percentageCollected, setPercentageCollected] = useState(0);
   const [idCobrador, setIdCobrador] = useState(null);
+  const [loading, setLoading] = useState(false); // Add loading state
 
-  // Función para obtener los datos de la API
   const fetchData = async () => {
+    setLoading(true); // Start loading
     try {
-      // Recupera el userInfo del AsyncStorage
       const userInfo = await AsyncStorage.getItem('userInfo');
       const token = await AsyncStorage.getItem('userToken');
       const url = APIURL.postAllCountGestiones();
-      console.log('URL:', url); // Imprime la URL para verificar
 
       if (userInfo) {
         const { ingresoCobrador } = JSON.parse(userInfo);
-        console.log('IngresoCobrador:', ingresoCobrador); // Imprime el objeto ingresoCobrador para verificar
-        
-        const idIngresoCobrador = ingresoCobrador.idIngresoCobrador; // Captura el idIngresoCobrador
-        console.log('idIngresoCobrador:', idIngresoCobrador); // Imprime el idIngresoCobrador para verificar
-        
+        const idIngresoCobrador = ingresoCobrador.idIngresoCobrador;
+
         setIdCobrador(idIngresoCobrador);
 
-        // Llama a la API con el idCobrador recuperado
         const response = await axios.post(url, { idCobrador: idIngresoCobrador }, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
-        
-        console.log('Response:', response.data); // Imprime la respuesta de la API para verificar
-        
+
         const { totalProjected, totalCollected, count } = response.data;
-       
-        // Asegúrate de que los valores no sean nulos o indefinidos
+
         const formattedTotalCollected = totalCollected !== null ? totalCollected.toFixed(2) : '0.00';
         const totalCount = count !== undefined ? count : 0;
         const totalProjectedCount = totalProjected !== null ? totalProjected : 0;
 
-        // Actualiza el estado con los datos recibidos
+        const percentage = totalProjectedCount > 0 ? (totalCollected / totalProjectedCount) * 100 : 0;
+
         setTotalAmount(formattedTotalCollected);
         setNumberOfClients(totalCount);
         setTotalProjected(totalProjectedCount);
+        setPercentageCollected(percentage.toFixed(2));
       } else {
         console.log('No userInfo found in AsyncStorage');
       }
     } catch (error) {
-      if (error.response) {
-        console.error('Error response data:', error.response.data);
-        console.error('Error response status:', error.response.status);
-        console.error('Error response headers:', error.response.headers);
-      } else if (error.request) {
-        console.error('Error request data:', error.request);
-      } else {
-        console.error('Error message:', error.message);
-      }
-      console.error('Error config:', error.config);
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false); // End loading
     }
   };
 
-  // Llama a fetchData cuando el componente se monta
   useEffect(() => {
     fetchData();
   }, []);
 
-  // Función que llama a fetchData para actualizar los datos
   const handleRefresh = () => {
     fetchData();
   };
@@ -86,28 +73,45 @@ export function DriveScreen(props) {
 
   return (
     <View style={styles.container}>
-      {/* Section for displaying total amount and number of clients */}
-      <View style={styles.summaryContainer}>
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Total Cobrado:</Text>
-          <Text style={styles.summaryValue}>${totalAmount}</Text>
+      <ScrollView contentContainerStyle={styles.scrollViewContent}>
+        <View style={styles.summaryContainer}>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Total Cobrado:</Text>
+            <Text style={styles.summaryValue}>${totalAmount}</Text>
+          </View>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}># De Clientes:</Text>
+            <Text style={styles.summaryValue}>{numberOfClients}</Text>
+          </View>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Proyectado:</Text>
+            <Text style={styles.summaryValue}>${totalProjected}</Text>
+          </View>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>% Cobrado:</Text>
+            <Text style={styles.summaryValue}>{percentageCollected}%</Text>
+          </View>
         </View>
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}># De Clientes:</Text>
-          <Text style={styles.summaryValue}>{numberOfClients}</Text>
+
+        <View style={styles.insertButtonContainer}>
+          <TouchableOpacity onPress={goToInsert} style={styles.insertButton}>
+            <Text style={styles.insertButtonText}>Agregar Datos</Text>
+          </TouchableOpacity>
         </View>
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Proyectado:</Text>
-          <Text style={styles.summaryValue}>${totalProjected}</Text>
-        </View>
-      </View>
-      
-      <Button title="Refresh Data" onPress={handleRefresh} />
-      {/* Search Input */}
-      <TextInput 
-        style={styles.input}
-        placeholder="Search"
-      />
+      </ScrollView>
+
+      <TouchableOpacity 
+        style={styles.fab} 
+        onPress={handleRefresh}
+        activeOpacity={0.7}
+        disabled={loading} // Disable button when loading
+      >
+        {loading ? (
+          <ActivityIndicator size="small" color="#fff" /> // Show loading spinner
+        ) : (
+          <Icon name="refresh" size={24} color="#fff" />
+        )}
+      </TouchableOpacity>
     </View>
   );
 }
@@ -115,35 +119,64 @@ export function DriveScreen(props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f4f4f4',
+  },
+  scrollViewContent: {
+    paddingBottom: 80, // Add padding to accommodate FAB
   },
   summaryContainer: {
-    backgroundColor: '#f8f8f8',
+    backgroundColor: '#ffffff',
+    margin: 20,
     padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
   },
   summaryItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 15,
   },
   summaryLabel: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
   },
   summaryValue: {
-    fontSize: 16,
+    fontSize: 18,
     color: '#333',
   },
-  input: {
-    width: '80%',
-    height: 40,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 10,
+  insertButtonContainer: {
     margin: 20,
+  },
+  insertButton: {
+    backgroundColor: '#4a90e2',
+    padding: 15,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  insertButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    width: 60,
+    height: 60,
+    backgroundColor: '#4a90e2',
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
   },
 });

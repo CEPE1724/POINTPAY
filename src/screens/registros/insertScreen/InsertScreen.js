@@ -192,7 +192,7 @@ export function InsertScreen({ route }) {
 
   const HandleGuardar = async () => {
     console.log("Guardando...");
-  
+    
     const url = 'http://192.168.2.124:3005/cobranza/api/v1/point/Cbo_GestionesDeCobranzas/insert';
     const token = 'YOUR_AUTHORIZATION_TOKEN'; // Reemplaza con tu token real
   
@@ -206,7 +206,7 @@ export function InsertScreen({ route }) {
       Fecha: currentDate,
       idCbo_EstadoGestion: selectedOption,
       idCbo_ResultadoGestion: selectResultado,
-      FechaPago: showComment?fechaPago: '1900-09-01T00:00:00.000Z',
+      FechaPago: showComment ? fechaPago : '1900-09-01T00:00:00.000Z',
       Valor: parseFloat(number) || 0,
       Usuario: userInfo.ingresoCobrador.codigo,
       Notas: comment,
@@ -262,6 +262,15 @@ export function InsertScreen({ route }) {
       // Manejo de respuesta
       if (response.status === 200) {
         Alert.alert("Éxito", "Datos guardados exitosamente.");
+        
+        // Restablecer los estados después de guardar
+        setSelectedOption(0);
+        setSelectTipoContacto(0);
+        setSelectResultado(0);
+        setNumber("");
+        setShowComment(false);
+        setComment("");
+        setSelectedDate(new Date()); // O cualquier valor inicial que prefieras
       } else {
         Alert.alert("Error", response.data.message || "Ocurrió un error al guardar los datos.");
       }

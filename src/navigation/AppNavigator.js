@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Gestionstack } from "./Gestionstack";
@@ -7,8 +7,9 @@ import { Registrostack } from "./Registrostack";
 import { Icon } from "react-native-elements";
 import { screen } from "../utils";
 import SplashScreen from "../screens/SplashScreen";
-import {LoginScreen} from "../screens/LoginScreen";
+import { LoginScreen } from "../screens/LoginScreen";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { View, StyleSheet, Text } from "react-native";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -17,9 +18,17 @@ const TabNavigator = () => (
   <Tab.Navigator
     screenOptions={({ route }) => ({
       headerShown: false,
-      tabBarActiveTintColor: "#022b58",
-      tabBarInactiveTintColor: "#8f9bb3",
-      tabBarIcon: ({ color, size }) => screenOptions(route, color, size),
+      tabBarActiveTintColor: "#ffffff", // Color del ícono activo
+      tabBarInactiveTintColor: "#ffffff", // Color del ícono inactivo
+      tabBarStyle: {
+        backgroundColor: '#1c2463', // Color de fondo de la barra de pestañas
+        borderTopWidth: 0, // Elimina el borde superior
+        borderTopLeftRadius: 20, // Radio de esquina superior izquierda
+        borderTopRightRadius: 20, // Radio de esquina superior derecha
+        overflow: 'hidden', // Asegura que el contenido no se desborde
+      },
+      tabBarIcon: ({ color, size, focused }) => renderIcon(route, color, size, focused),
+      tabBarLabel: ({ focused }) => focused ? <Text style={styles.label}>{renderLabel(route)}</Text> : null, // Mostrar título solo cuando está seleccionado
     })}
   >
     <Tab.Screen 
@@ -36,14 +45,14 @@ const TabNavigator = () => (
       name={screen.home.tab} 
       component={AccountStack} 
       options={{ 
-        tabBarStyle: { display: 'none' },
-        title: "Cuenta" // Oculta la barra de pestañas en LoginScreen
+        tabBarStyle: { display: 'none' }, // Oculta la barra de pestañas en esta pantalla
+        title: "Cuenta"
       }}
     />
   </Tab.Navigator>
 );
 
-function screenOptions(route, color, size) {
+function renderIcon(route, color, size, focused) {
   let iconName;
   if (route.name === screen.home.tab) {
     iconName = "account-circle";
@@ -54,10 +63,51 @@ function screenOptions(route, color, size) {
   if (route.name === screen.registro.tab) {
     iconName = "book";
   }
+
   return (
-    <Icon type="material-community" name={iconName} color={color} size={size} />
+    <View
+      style={[
+        styles.iconContainer,
+        { backgroundColor: focused ? '#de2317' : 'transparent' }, // Fondo rojo si está seleccionado
+      ]}
+    >
+      <Icon
+        type="material-community"
+        name={iconName}
+        color={focused ? '#ffffff' : color} // Color blanco si está seleccionado
+        size={size}
+      />
+    </View>
   );
 }
+
+function renderLabel(route) {
+  // Retorna el título basado en el nombre de la ruta
+  switch (route.name) {
+    case screen.home.tab:
+      return "Cuenta";
+    case screen.drive.tab:
+      return "Inicio";
+    case screen.registro.tab:
+      return "Registros";
+    default:
+      return "";
+  }
+}
+
+const styles = StyleSheet.create({
+  iconContainer: {
+    width: 50,
+    height: 70,
+    borderRadius: 0, // Sin bordes redondeados
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  label: {
+    color: '#ffffff', // Color del texto del título
+    fontSize: 12, // Tamaño de fuente del texto
+  },
+});
 
 const AuthStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -67,10 +117,10 @@ const AuthStack = () => (
 );
 
 export function AppNavigator() {
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = React.useState(true);
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const checkLoginStatus = async () => {
       try {
         // Simula la verificación del token o del estado de inicio de sesión
