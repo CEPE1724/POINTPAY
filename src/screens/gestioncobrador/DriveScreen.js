@@ -101,7 +101,7 @@ export function DriveScreen(props) {
           <Text style={styles.summaryValue}>${totalProjected}</Text>
         </View>
       </View>
-      <Button title="Add New" onPress={goToInsert} />
+      
       <Button title="Refresh Data" onPress={handleRefresh} />
       {/* Search Input */}
       <TextInput 

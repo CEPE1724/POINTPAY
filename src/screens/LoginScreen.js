@@ -18,9 +18,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import logo from "../../assets/pointLogin.png";
 import { APIURL } from "../config/apiconfig";
-import {KeyboardAwareScrollView} from "react-native-keyboard-aware-scroll-view";
 import { useNavigation } from "@react-navigation/native";
-export  function LoginScreen(props) {
+import DateTimePicker from '@react-native-community/datetimepicker'; // Asegúrate de instalar este paquete
+
+export function LoginScreen(props) {
   const { navigation } = props;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -30,6 +31,8 @@ export  function LoginScreen(props) {
   const [isEmailEditing, setIsEmailEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false); // Estado para manejar la carga
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [birthdate, setBirthdate] = useState(new Date()); // Estado para la fecha de nacimiento
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
   const { width, height } = Dimensions.get("window");
@@ -69,7 +72,6 @@ export  function LoginScreen(props) {
       // Simular tiempo de carga adicional
       setTimeout(async () => {
         try {
-
           const url = APIURL.senLogin();
           const response = await fetch(url, {
             method: "POST",
@@ -89,18 +91,21 @@ export  function LoginScreen(props) {
             Alert.alert("Error", data.message || "Credenciales incorrectas");
           }
         } catch (error) {
-          console.error(
-            "Error al realizar la solicitud de inicio de sesión:",
-            error
-          );
-          Alert.alert(
-            "Error",
-            "Hubo un problema al iniciar sesión. Inténtalo de nuevo."
-          );
+          console.error("Error al realizar la solicitud de inicio de sesión:", error);
+          Alert.alert("Error", "Hubo un problema al iniciar sesión. Inténtalo de nuevo.");
         } finally {
           setIsLoading(false); // Desactivar el estado de carga
         }
       }, 3000); // Simular tiempo de espera adicional
+    }
+  };
+
+  const showDatePickerModal = () => setShowDatePicker(true);
+
+  const handleDateChange = (event, selectedDate) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      setBirthdate(selectedDate);
     }
   };
 
@@ -173,6 +178,7 @@ export  function LoginScreen(props) {
         </TouchableOpacity>
 
         <Text style={styles.version}>V.1.0.0</Text>
+
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -246,5 +252,13 @@ const styles = StyleSheet.create({
     color: "#fff",
     marginTop: 20,
     fontSize: 14,
+  },
+  datePickerText: {
+    fontSize: 16,
+    marginLeft: 10,
+    color: "#fff",
+  },
+  icon: {
+    marginRight: 10,
   },
 });
