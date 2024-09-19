@@ -8,7 +8,12 @@ const Stack = createNativeStackNavigator();
 
 export function Registrostack()  {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator
+    screenOptions={{
+      headerStyle: { backgroundColor: '#1c2463' }, // Color de fondo verde
+      headerTintColor: '#ffffff', // Color de la letra blanco
+    }}
+    >
       <Stack.Screen 
       name={screen.drive.inicio} 
       component={RegistroScreen} 

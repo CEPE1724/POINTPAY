@@ -7,16 +7,21 @@ const Stack = createNativeStackNavigator();
 
 export function Gestionstack()  {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: '#1c2463' }, // Color de fondo verde
+        headerTintColor: '#ffffff', // Color de la letra blanco
+      }}
+    >
       <Stack.Screen 
-      name={screen.drive.inicio} 
-      component={DriveScreen} 
-      options={{ title: "Inicio" }}
+        name={screen.drive.inicio} 
+        component={DriveScreen} 
+        options={{ title: "Dashboard" }}
       />
       <Stack.Screen 
-      name={screen.drive.insert} 
-      component={InsertGestionscreen} 
-      options={{ title: "Gestión" }}
+        name={screen.drive.insert} 
+        component={InsertGestionscreen} 
+        options={{ title: "Gestión" }}
       />
     </Stack.Navigator>
   );

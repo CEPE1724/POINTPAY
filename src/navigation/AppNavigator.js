@@ -46,8 +46,10 @@ const TabNavigator = () => (
       component={AccountStack} 
       options={{ 
         tabBarStyle: { display: 'none' }, // Oculta la barra de pestañas en esta pantalla
-        title: "Cuenta"
+        title: "Cuenta",
+        
       }}
+      
     />
   </Tab.Navigator>
 );

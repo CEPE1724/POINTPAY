@@ -125,7 +125,7 @@ export function LoginScreen(props) {
           <Text style={styles.subtitle}>Ingresa tu usuario</Text>
           <TextInput
             style={styles.input}
-            placeholder="Email"
+            placeholder="Usuario"
             keyboardType="email-address"
             value={email}
             onChangeText={handleEmailChange}

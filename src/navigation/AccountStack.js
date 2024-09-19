@@ -7,7 +7,12 @@ const Stack = createNativeStackNavigator();
 
 export function AccountStack()  {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator
+    screenOptions={{
+      headerStyle: { backgroundColor: '#1c2463' }, // Color de fondo verde
+      headerTintColor: '#ffffff', // Color de la letra blanco
+    }}
+    >
       <Stack.Screen 
       name={screen.home.inicio} 
       component={HomeScreen} 
