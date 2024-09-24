@@ -76,10 +76,23 @@ export function DriveScreen(props) {
     navigation.navigate(screen.drive.insert);
   };
 
+  const gotoRegistro = () => {
+    navigation.navigate(screen.registro.tab, { screen: screen.registro.inicio });
+  };
+
+  const gotoTerreno = () => {
+    navigation.navigate(screen.terreno.tab, { screen: screen.terreno.inicio });
+  };
+
+  const handleNavigate = () => {
+    // Aquí puedes decidir a qué pantalla redirigir
+    gotoRegistro(); // Por ejemplo, redirige a la pantalla de registro
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        <View style={styles.summaryContainer}>
+        <TouchableOpacity onPress={handleNavigate} style={styles.summaryContainer}>
           <Text style={styles.title}>Resumen de Cobranza</Text>
           <View style={styles.row}>
             <View style={styles.card}>
@@ -121,9 +134,9 @@ export function DriveScreen(props) {
               </View>
             </View>
           </View>
-        </View>
+        </TouchableOpacity>
 
-        <View style={styles.summaryContainer}>
+        <TouchableOpacity onPress={gotoTerreno} style={styles.summaryContainer}>
           <Text style={styles.title}>Verificación Terrena</Text>
           <View style={styles.row}>
             <View style={styles.card}>
@@ -145,7 +158,7 @@ export function DriveScreen(props) {
               </View>
             </View>
           </View>
-        </View>
+        </TouchableOpacity>
 
         <View style={styles.insertButtonContainer}>
           <TouchableOpacity onPress={goToInsert} style={styles.insertButton}>

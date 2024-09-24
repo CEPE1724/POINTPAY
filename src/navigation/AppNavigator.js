@@ -3,7 +3,8 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Gestionstack } from "./Gestionstack";
 import { AccountStack } from "./AccountStack";
-import { Registrostack } from "./Registrostack"; 
+import { Registrostack } from "./Registrostack";
+import { Terrenostack } from "./Terrenostack";
 import { Icon } from "react-native-elements";
 import { screen } from "../utils";
 import SplashScreen from "../screens/SplashScreen";
@@ -21,35 +22,42 @@ const TabNavigator = () => (
       tabBarActiveTintColor: "#ffffff", // Color del ícono activo
       tabBarInactiveTintColor: "#ffffff", // Color del ícono inactivo
       tabBarStyle: {
-        backgroundColor: '#1c2463', // Color de fondo de la barra de pestañas
+        backgroundColor: "#1c2463", // Color de fondo de la barra de pestañas
         borderTopWidth: 0, // Elimina el borde superior
         borderTopLeftRadius: 20, // Radio de esquina superior izquierda
         borderTopRightRadius: 20, // Radio de esquina superior derecha
-        overflow: 'hidden', // Asegura que el contenido no se desborde
+        overflow: "hidden", // Asegura que el contenido no se desborde
       },
-      tabBarIcon: ({ color, size, focused }) => renderIcon(route, color, size, focused),
-      tabBarLabel: ({ focused }) => focused ? <Text style={styles.label}>{renderLabel(route)}</Text> : null, // Mostrar título solo cuando está seleccionado
+      tabBarIcon: ({ color, size, focused }) =>
+        renderIcon(route, color, size, focused),
+      tabBarLabel: ({ focused }) =>
+        focused ? <Text style={styles.label}>{renderLabel(route)}</Text> : null, // Mostrar título solo cuando está seleccionado
     })}
   >
-    <Tab.Screen 
-      name={screen.drive.tab} 
-      component={Gestionstack} 
+    <Tab.Screen
+      name={screen.drive.tab}
+      component={Gestionstack}
       options={{ title: "Inicio" }}
     />
-    <Tab.Screen 
-      name={screen.registro.tab} 
-      component={Registrostack} 
+    <Tab.Screen
+      name={screen.registro.tab}
+      component={Registrostack}
       options={{ title: "Registros" }}
     />
-    <Tab.Screen 
-      name={screen.home.tab} 
-      component={AccountStack} 
-      options={{ 
-        tabBarStyle: { display: 'none' }, // Oculta la barra de pestañas en esta pantalla
-        title: "Cuenta",
-        
+    <Tab.Screen
+      name={screen.terreno.tab}
+      component={Terrenostack}
+      options={{
+        title: "Terreno",
       }}
-      
+    />
+    <Tab.Screen
+      name={screen.home.tab}
+      component={AccountStack}
+      options={{
+        tabBarStyle: { display: "none" }, // Oculta la barra de pestañas en esta pantalla
+        title: "Cuenta",
+      }}
     />
   </Tab.Navigator>
 );
@@ -65,18 +73,21 @@ function renderIcon(route, color, size, focused) {
   if (route.name === screen.registro.tab) {
     iconName = "book";
   }
+  if (route.name === screen.terreno.tab) {
+    iconName = "terrain";
+  }
 
   return (
     <View
       style={[
         styles.iconContainer,
-        { backgroundColor: focused ? '#de2317' : 'transparent' }, // Fondo rojo si está seleccionado
+        { backgroundColor: focused ? "#de2317" : "transparent" }, // Fondo rojo si está seleccionado
       ]}
     >
       <Icon
         type="material-community"
         name={iconName}
-        color={focused ? '#ffffff' : color} // Color blanco si está seleccionado
+        color={focused ? "#ffffff" : color} // Color blanco si está seleccionado
         size={size}
       />
     </View>
@@ -92,6 +103,8 @@ function renderLabel(route) {
       return "Inicio";
     case screen.registro.tab:
       return "Registros";
+    case screen.terreno.tab:
+      return "Terreno";
     default:
       return "";
   }
@@ -102,11 +115,11 @@ const styles = StyleSheet.create({
     width: 50,
     height: 70,
     borderRadius: 0, // Sin bordes redondeados
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   label: {
-    color: '#ffffff', // Color del texto del título
+    color: "#ffffff", // Color del texto del título
     fontSize: 12, // Tamaño de fuente del texto
   },
 });

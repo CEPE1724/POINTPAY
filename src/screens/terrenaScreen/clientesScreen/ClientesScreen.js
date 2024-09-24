@@ -5,19 +5,18 @@ import {
   ScrollView,
   ActivityIndicator,
   TouchableOpacity,
-  StyleSheet,
   TextInput,
 } from "react-native";
 import axios from "axios";
-import { styles } from "./RegistroScreenStyle"; // Verifica el path
+import { styles } from "./ClientesScreen.style";
 import { useNavigation } from "@react-navigation/native";
 import { screen } from "../../../utils/screenName";
 import { APIURL } from "../../../config/apiconfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Card } from "../../../components/Registro/Card"; // Importa el nuevo componente Card
+import { CardCliente } from "../../../components/Terrena";
 import Icon from "react-native-vector-icons/FontAwesome";
 
-export function RegistroScreen(props) {
+export function ClientesScreen(props) {
   const { navigation } = props;
   const [data, setData] = useState([]);
   const [totalRecords, setTotalRecords] = useState(0);
@@ -25,10 +24,10 @@ export function RegistroScreen(props) {
   const [limit, setLimit] = useState(10);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [pressedCardIndex, setPressedCardIndex] = useState(null); // State to manage pressed card
+  const [pressedCardIndex, setPressedCardIndex] = useState(null);
   const [userInfo, setUserInfo] = useState({ ingresoCobrador: "" });
-  const [userInfoLoaded, setUserInfoLoaded] = useState(false); // Track if user info is loaded
-  const [filtro, setFiltro] = useState(""); // State for the search filter
+  const [userInfoLoaded, setUserInfoLoaded] = useState(false);
+  const [filtro, setFiltro] = useState("");
 
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -39,71 +38,72 @@ export function RegistroScreen(props) {
           setUserInfo({
             ingresoCobrador: user.ingresoCobrador.idIngresoCobrador || "",
           });
-          setUserInfoLoaded(true); // Mark user info as loaded
+          setUserInfoLoaded(true);
         }
       } catch (error) {
         console.error("Error fetching user info:", error);
-        setUserInfoLoaded(true); // Mark user info as loaded even if there's an error
+        setUserInfoLoaded(true);
       }
     };
 
     fetchUserInfo();
   }, []);
 
-  // Fetch data from API with added retry logic
   const fetchData = async (page = 1, retries = 3) => {
     if (!userInfoLoaded || loading || (page > 1 && data.length >= totalRecords))
-      return; // Ensure user info is loaded, avoid multiple requests, and prevent fetching if all data is loaded
+      return;
 
     setLoading(true);
     try {
-      const idCobrador = userInfo.ingresoCobrador; // Adjust according to your logic
-      const url = APIURL.getAllcliente(); // Verifica el path
+      const idCobrador = userInfo.ingresoCobrador;
+      const url = APIURL.getAllVerificacionTerrena();
+
       const response = await axios.get(url, {
-        params: {
-          idCobrador,
-          filtro,    
-          page,
-          limit,
-        },
+        params: { idCobrador, filtro, page, limit },
         headers: {
           "Cache-Control": "no-cache",
           Pragma: "no-cache",
           Expires: "0",
         },
       });
-      const [fetchedData, total] = response.data;
+
+      const fetchedData = response.data.registros || [];
+      const total = response.data.total || 0;
+
+      // Limpiar los datos si es la primera página
       setData((prevData) =>
         page === 1 ? fetchedData : [...prevData, ...fetchedData]
       );
       setTotalRecords(total);
-      setLoading(false);
-      setLoadingMore(false);
     } catch (error) {
       if (retries > 0) {
-        console.error(
-          `Retrying fetch data, attempts remaining: ${retries - 1}`
-        );
+        console.error(`Retrying fetch data, attempts remaining: ${retries - 1}`);
         setTimeout(() => fetchData(page, retries - 1), 1000);
       } else {
         console.error("Error fetching data:", error);
-        setLoading(false);
-        setLoadingMore(false);
       }
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
     }
   };
 
   useEffect(() => {
     if (userInfoLoaded) {
       fetchData(currentPage);
+      const intervalId = setInterval(() => {
+        fetchData(1); // Re-fetch data every 5 seconds
+      }, 9000); // 5000 ms = 5 seconds
+
+      return () => clearInterval(intervalId); // Clean up the interval on unmount
     }
-  }, [currentPage, userInfoLoaded]);
+  }, [userInfoLoaded]);
 
   useEffect(() => {
     if (userInfoLoaded) {
-      setCurrentPage(1); // Reset to page 1 when the filter changes
-      setData([]); // Clear existing data
-      fetchData(1); // Fetch new data based on the filter
+      setCurrentPage(1);
+      setData([]); // Limpiar los datos al cambiar el filtro
+      fetchData(1); // Volver a cargar datos con el filtro
     }
   }, [filtro]);
 
@@ -114,54 +114,44 @@ export function RegistroScreen(props) {
     }
   };
 
+  const handleRefresh = () => {
+    setCurrentPage(1); // Resetear a la primera página
+    fetchData(1); // Llamar a la función de obtener datos
+  };
+
   const handleCardPress = (item, index) => {
-    navigation.navigate(screen.registro.insertCall, { item });
+    navigation.navigate(screen.terreno.insert, { item });
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.inputContainersearch}>
-        <Icon
-          name="search"
-          size={24}
-          color="black"
-          style={styles.iconsearch}
-        />
-        <TextInput
-          style={styles.inputsearch}
-          placeholder="Buscar"
-          placeholderTextColor="#aaa"
-          value={filtro}
-          onChangeText={setFiltro}
-        />
-      </View>
-
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={{ paddingBottom: 80 }} // To ensure space for the floating button
+        contentContainerStyle={{ paddingBottom: 80 }}
       >
         <View style={styles.grid}>
           {data.map((item, index) => (
-            <Card
-              key={index}
+            <CardCliente
+              key={item.idClienteVerificacion} // Clave única
               item={item}
-              index={index}
-              onPress={handleCardPress}
-              onPressIn={() => setPressedCardIndex(index)}
-              onPressOut={() => setPressedCardIndex(null)}
-              pressedCardIndex={pressedCardIndex} 
+              pressedCardIndex={pressedCardIndex}
+              onPress={handleCardPress} // Pasa la función de navegación
             />
           ))}
         </View>
-        {loading && !loadingMore && (
-          <ActivityIndicator size="large" color="#0000ff" />
-        )}
+        {loading && !loadingMore && <ActivityIndicator size="large" color="#0000ff" />}
         {!loading && !loadingMore && data.length === 0 && (
           <View>
-             <Icon name="history" size={80} 
-             color="#fffff" style={styles.iconNoData} />
-                   <Text style={styles.noData}>No se encontro nada</Text>
-                   <Text style={styles.noData}>Pruebe con una palabra clave distinta.</Text>
+            <Icon
+              name="history"
+              size={80}
+              color="#fffff"
+              style={styles.iconNoData}
+            />
+            <Text style={styles.noData}>No se encontró nada</Text>
+            <Text style={styles.noData}>
+              Pruebe con una palabra clave distinta.
+            </Text>
           </View>
         )}
         {loadingMore && (
@@ -173,11 +163,12 @@ export function RegistroScreen(props) {
         )}
       </ScrollView>
       <TouchableOpacity
-        style={[styles.floatingButton, { opacity: loadingMore ? 0.5 : 1 }]} // Disable button when loading more
-        onPress={handleLoadMore}
-        disabled={loadingMore} // Disable button while loading more data
+        style={[styles.floatingButton, { opacity: loadingMore ? 0.5 : 1 }]}
+        onPress={handleRefresh}
+        disabled={loadingMore}
       >
-        <Icon name="plus" size={20} color="#fff" />
+        <Icon name="refresh" size={20} color="#fff" />
+
       </TouchableOpacity>
     </View>
   );

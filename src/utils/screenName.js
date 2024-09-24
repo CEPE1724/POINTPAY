@@ -17,10 +17,17 @@ const registroStack = {
     insertCall: "RegistroInsertCall",
 }
 
+const terrenoStack = {
+    tab: "TerrenoTab",
+    inicio: "Terreno",
+    insert: "TerrenoInsert",
+}
+
 export const screen = {
         drive: driveStack,
         home: homeStack,
         registro: registroStack,
+        terreno: terrenoStack,
 
     };
 //navigation.navigate(screen.drive.insert);   para viajar en las mismas pantallas o stack
