@@ -9,4 +9,6 @@ export const APIURL = {
     getAllclienteInsert : () =>`${API_BASE_URL}registroindividual`,
     socketEndpoint: () => `${SOCKET_BASE_URL}`,
     getAllVerificacionTerrena : () =>`${API_BASE_URL}ClientesVerificionTerrena/list`,
+    postUbicacionesAPPlocation : () =>`${API_BASE_URL}UbicacionesAPP/location`,
+    getUbicacionesAPPidUser: (idUser) =>`${API_BASE_URL}UbicacionesAPP/idUser/${idUser}`,
 };

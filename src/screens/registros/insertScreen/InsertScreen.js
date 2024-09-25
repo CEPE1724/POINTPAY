@@ -35,11 +35,12 @@ export function InsertScreen({ route }) {
     const fetchUserInfo = async () => {
       try {
         const storedUserInfo = await AsyncStorage.getItem("userInfo");
+        console.log("Stored user info:", storedUserInfo);
         if (storedUserInfo) {
           const user = JSON.parse(storedUserInfo);
 
-          setUserInfo({ ingresoCobrador: user.ingresoCobrador || "" });
-          console.log("User info:", userInfo);
+          setUserInfo(  user.ingresoCobrador.idIngresoCobrador  || "" );
+          console.log("User info..:", userInfo);
         }
       } catch (error) {
         console.error("Error fetching user info:", error);
