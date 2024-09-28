@@ -216,7 +216,7 @@ export function InsertScreen({ route }) {
       idCbo_EstadosTipocontacto: selectTipoContacto,
     };
   
-    console.log("Datos a enviar:", data);
+
   
     // Validaciones
     if (selectedOption === 0) {

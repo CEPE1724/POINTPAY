@@ -5,7 +5,6 @@ import {
   ScrollView,
   ActivityIndicator,
   TouchableOpacity,
-  TextInput,
 } from "react-native";
 import axios from "axios";
 import { styles } from "./ClientesScreen.style";
@@ -20,15 +19,14 @@ export function ClientesScreen(props) {
   const { navigation } = props;
   const [data, setData] = useState([]);
   const [totalRecords, setTotalRecords] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [limit, setLimit] = useState(10);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [pressedCardIndex, setPressedCardIndex] = useState(null);
   const [userInfo, setUserInfo] = useState({ ingresoCobrador: "" });
   const [userInfoLoaded, setUserInfoLoaded] = useState(false);
   const [filtro, setFiltro] = useState("");
-
+  const [countData, setCountData] = useState([]);
+  
+  // Inicializa el socket
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
@@ -49,17 +47,27 @@ export function ClientesScreen(props) {
     fetchUserInfo();
   }, []);
 
+  const fetchCountData = async () => {
+    try {
+      const urlCount = APIURL.getClientesVerificionTerrenacountEstado();
+      const response = await axios.get(urlCount, {
+        params: { idVerificador: userInfo.ingresoCobrador },
+      });
+      setCountData(response.data);
+    } catch (error) {
+      console.error("Error fetching count data:", error);
+    }
+  };
+
   const fetchData = async (page = 1, retries = 3) => {
-    if (!userInfoLoaded || loading || (page > 1 && data.length >= totalRecords))
-      return;
+    if (!userInfoLoaded || loading || (page > 1 && data.length >= totalRecords)) return;
 
     setLoading(true);
     try {
       const idCobrador = userInfo.ingresoCobrador;
       const url = APIURL.getAllVerificacionTerrena();
-
       const response = await axios.get(url, {
-        params: { idCobrador, filtro, page, limit },
+        params: { idCobrador, filtro, page },
         headers: {
           "Cache-Control": "no-cache",
           Pragma: "no-cache",
@@ -70,10 +78,7 @@ export function ClientesScreen(props) {
       const fetchedData = response.data.registros || [];
       const total = response.data.total || 0;
 
-      // Limpiar los datos si es la primera página
-      setData((prevData) =>
-        page === 1 ? fetchedData : [...prevData, ...fetchedData]
-      );
+      setData((prevData) => (page === 1 ? fetchedData : [...prevData, ...fetchedData]));
       setTotalRecords(total);
     } catch (error) {
       if (retries > 0) {
@@ -90,38 +95,31 @@ export function ClientesScreen(props) {
 
   useEffect(() => {
     if (userInfoLoaded) {
-      fetchData(currentPage);
-      const intervalId = setInterval(() => {
-        fetchData(1); // Re-fetch data every 5 seconds
-      }, 9000); // 5000 ms = 5 seconds
+      fetchCountData(); // Fetch count data on user info load
+      fetchData(); // Fetch initial data
 
-      return () => clearInterval(intervalId); // Clean up the interval on unmount
+      const intervalId = setInterval(() => {
+        fetchCountData(); // Update count data periodically
+        fetchData(1); // Refresh data every specified time
+      }, 10000); // 10 seconds
+
+      // Limpiar el socket y el intervalo al desmontar el componente
+      return () => {
+        clearInterval(intervalId); // Clear interval
+        socket.disconnect(); // Disconnect socket
+      };
     }
   }, [userInfoLoaded]);
 
-  useEffect(() => {
-    if (userInfoLoaded) {
-      setCurrentPage(1);
-      setData([]); // Limpiar los datos al cambiar el filtro
-      fetchData(1); // Volver a cargar datos con el filtro
-    }
-  }, [filtro]);
-
-  const handleLoadMore = () => {
-    if (!loadingMore && data.length < totalRecords) {
-      setLoadingMore(true);
-      setCurrentPage((prevPage) => prevPage + 1);
-    }
+  const handleIconPress = (item, tipo) => {
+    navigation.navigate(screen.terreno.insert, { item, tipo });
   };
 
-  const handleRefresh = () => {
-    setCurrentPage(1); // Resetear a la primera página
-    fetchData(1); // Llamar a la función de obtener datos
-  };
-
-  const handleCardPress = (item, index) => {
-    navigation.navigate(screen.terreno.insert, { item });
-  };
+  // Calculate totals
+  const totalPendiente = countData.find((item) => item.eSTADO === "PENDIENTE")?.Count || 0;
+  const totalEnviado = countData.find((item) => item.eSTADO === "ENVIADO")?.Count || 0;
+  const totalAnulado = countData.find((item) => item.eSTADO === "ANULADO")?.Count || 0;
+  const total = totalPendiente + totalEnviado + totalAnulado;
 
   return (
     <View style={styles.container}>
@@ -129,46 +127,76 @@ export function ClientesScreen(props) {
         style={styles.scrollView}
         contentContainerStyle={{ paddingBottom: 80 }}
       >
+        {/* Render Count Data Circles */}
+        <View style={styles.countContainer}>
+          <View style={styles.circleBorder}>
+            <Text style={styles.circleText}>{total}</Text>
+            <Text style={styles.circleTextSubtitle}>TOTAL</Text>
+          </View>
+          {countData.map((item) => {
+            let borderColor;
+            switch (item.eSTADO) {
+              case "PENDIENTE":
+                borderColor = "yellow"; // Color for pending
+                break;
+              case "ENVIADO":
+                borderColor = "green"; // Color for sent
+                break;
+              case "ANULADO":
+                borderColor = "red"; // Color for canceled
+                break;
+              default:
+                borderColor = "gray"; // Default color
+            }
+
+            return (
+              <View
+                key={item.eSTADO}
+                style={[styles.circleBorder, { borderColor }]}
+              >
+                <Text style={styles.circleText}>{item.Count}</Text>
+                <Text style={styles.circleTextSubtitle}>{item.eSTADO}</Text>
+              </View>
+            );
+          })}
+        </View>
+
+        {/* Render List of Clientes */}
         <View style={styles.grid}>
-          {data.map((item, index) => (
+          {data.map((item) => (
             <CardCliente
-              key={item.idClienteVerificacion} // Clave única
+              key={item.idClienteVerificacion}
               item={item}
-              pressedCardIndex={pressedCardIndex}
-              onPress={handleCardPress} // Pasa la función de navegación
+              handleIconPress={handleIconPress}
             />
           ))}
         </View>
-        {loading && !loadingMore && <ActivityIndicator size="large" color="#0000ff" />}
-        {!loading && !loadingMore && data.length === 0 && (
+
+        {/* Loading and No Data Indicators */}
+        {loading && <ActivityIndicator size="large" color="#0000ff" />}
+        {!loading && data.length === 0 && (
           <View>
             <Icon
               name="history"
               size={80}
-              color="#fffff"
+              color="#fff"
               style={styles.iconNoData}
             />
             <Text style={styles.noData}>No se encontró nada</Text>
-            <Text style={styles.noData}>
-              Pruebe con una palabra clave distinta.
-            </Text>
           </View>
         )}
-        {loadingMore && (
-          <ActivityIndicator
-            size="large"
-            color="#0000ff"
-            style={styles.loadingIndicator}
-          />
-        )}
+        {loadingMore && <ActivityIndicator size="large" color="#0000ff" />}
       </ScrollView>
+
       <TouchableOpacity
         style={[styles.floatingButton, { opacity: loadingMore ? 0.5 : 1 }]}
-        onPress={handleRefresh}
+        onPress={() => {
+          fetchData(1); // Refresh data
+          fetchCountData(); // Refresh count data
+        }}
         disabled={loadingMore}
       >
         <Icon name="refresh" size={20} color="#fff" />
-
       </TouchableOpacity>
     </View>
   );

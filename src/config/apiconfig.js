@@ -11,4 +11,8 @@ export const APIURL = {
     getAllVerificacionTerrena : () =>`${API_BASE_URL}ClientesVerificionTerrena/list`,
     postUbicacionesAPPlocation : () =>`${API_BASE_URL}UbicacionesAPP/location`,
     getUbicacionesAPPidUser: (idUser) =>`${API_BASE_URL}UbicacionesAPP/idUser/${idUser}`,
+    /* API DE VERIFICACION TERRENA */
+    getClientesVerificionTerrenacountEstado : () =>`${API_BASE_URL}ClientesVerificionTerrena/countEstado`,
+    postTerrenaGestionDomicilioSave : () =>`${API_BASE_URL}TerrenaGestionDomicilio/save`,
+    postTerrenaGestionTrabajoSave : () =>`${API_BASE_URL}TerrenaGestionTrabajo/save`,
 };

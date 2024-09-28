@@ -16,57 +16,97 @@ import { RadioGroup } from "../../../components/Terrena";
 import { TextInputField } from "../../../components/Terrena";
 import { launchImageLibrary } from "react-native-image-picker";
 import * as ImagePicker from "expo-image-picker";
-
+import CustomModal from "../../../components/Terrena/Mapa/CustomModal";
+import { APIURL } from "../../../config/apiconfig";
+import PropTypes from "prop-types";
+import { useNavigation } from "@react-navigation/native";
+import { screen } from "../../../utils/screenName";
+import { ConfirmationModal } from "../../../components/Terrena";
 const Tab = createMaterialTopTabNavigator();
 const options = {
   tipoclienteOptions: [
-    { value: "Cliente", label: "Cliente", icon: "home" },
-    { value: "Garante", label: "Garante", icon: "building" },
+    { value: 1, label: "Cliente", icon: "home" },
+    { value: 2, label: "Garante", icon: "building" },
   ],
 
   tipoViviendaOptions: [
-    { value: "Casa", label: "Casa", icon: "home" },
-    { value: "Villa", label: "Villa", icon: "tree" },
-    { value: "Mixta", label: "Mixta", icon: "building" },
-    { value: "Depart.", label: "Departamento", icon: "building" },
-    { value: "MediaAgua", label: "MediaAgua", icon: "leaf" },
+    { value: 1, label: "Casa", icon: "home" },
+    { value: 3, label: "Villa", icon: "tree" },
+    { value: 4, label: "Mixta", icon: "building" },
+    { value: 2, label: "Departamento", icon: "building" },
+    { value: 5, label: "MediaAgua", icon: "leaf" },
   ],
 
   estadoOptions: [
-    { value: "Muy Bueno", label: "Muy Bueno", icon: "smile-o" },
-    { value: "Bueno", label: "Bueno", icon: "meh-o" },
-    { value: "Malo", label: "Malo", icon: "frown-o" },
+    { value: 2, label: "Muy Bueno", icon: "smile-o" },
+    { value: 1, label: "Bueno", icon: "meh-o" },
+    { value: 3, label: "Malo", icon: "frown-o" },
   ],
 
   zonaOptions: [
-    { value: "Urbano", label: "Urbano", icon: "building" },
-    { value: "Rural", label: "Rural", icon: "tree" },
+    { value: 1, label: "Urbano", icon: "building" },
+    { value: 2, label: "Rural", icon: "tree" },
   ],
 
   propiedadOptions: [
-    { value: "Propio", label: "Propio", icon: "key" },
-    { value: "Familiar", label: "Familiar", icon: "users" },
-    { value: "Arrendado", label: "Arrendado", icon: "money" },
+    { value: 1, label: "Propio", icon: "key" },
+    { value: 3, label: "Familiar", icon: "users" },
+    { value: 2, label: "Arrendado", icon: "money" },
   ],
 
   accesoOptions: [
-    { value: "Facil", label: "Facil", icon: "key" },
-    { value: "Dificil", label: "Dificil", icon: "users" },
+    { value: 1, label: "Facil", icon: "key" },
+    { value: 2, label: "Dificil", icon: "users" },
   ],
 
   coberturaSeñalOptions: [
-    { value: "Llamada Movil", label: "Llamada Movil", icon: "phone" }, // Cambié a "phone" para más claridad
-    { value: "Whatsapp", label: "Whatsapp", icon: "comments" }, // Cambié a "comments" para representar mejor la app
+    { value: 1, label: "Llamada Movil", icon: "phone" }, // Cambié a "phone" para más claridad
+    { value: 2, label: "Whatsapp", icon: "comments" }, // Cambié a "comments" para representar mejor la app
   ],
 
   tipoTrabajoOptions: [
-    { value: "Dependiente", label: "Dependiente", icon: "building" },
-    { value: "Independiente", label: "Independiente", icon: "briefcase" }, // Cambié a "briefcase" para representar mejor el trabajo independiente
-    { value: "Informal", label: "Informal", icon: "user" }, // Cambié a "user" para dar un sentido más personal
+    { value: 1, label: "Dependiente", icon: "building" },
+    { value: 2, label: "Independiente", icon: "briefcase" }, // Cambié a "briefcase" para representar mejor el trabajo independiente
+    { value: 3, label: "Informal", icon: "user" }, // Cambié a "user" para dar un sentido más personal
   ],
 };
 
 const DomicilioTab = ({ state, setState }) => {
+  const [showModal, setShowModal] = useState(false);
+  const [location, setLocation] = useState({
+    GpsRef: "",
+    latitud: "",
+    longitud: "",
+  });
+
+  const toggleModal = () => setShowModal(!showModal);
+
+  const handleLocationSelect = (selectedLocation) => {
+    setLocation({
+      latitud: selectedLocation.latitude.toString(),
+      longitud: selectedLocation.longitude.toString(),
+      GpsRef: selectedLocation.address,
+    });
+    toggleModal();
+  };
+
+  const handleSubmit = () => {
+    Alert.alert("Location Submitted", JSON.stringify(location));
+    // Add logic to send location to backend if needed
+  };
+
+  useEffect(() => {
+    // Update callePrincipal and calleSecundaria when location changes
+    if (location.latitud && location.longitud) {
+      setState((prevState) => ({
+        ...prevState,
+        refGPS: location.GpsRef,
+        callePrincipal: location.latitud,
+        calleSecundaria: location.longitud,
+      }));
+    }
+  }, [location, setState]);
+
   const {
     tipocliente,
     tiempoVivienda,
@@ -84,6 +124,7 @@ const DomicilioTab = ({ state, setState }) => {
     propia,
     acceso,
     coberturaSeñal,
+    refGPS,
   } = state;
   const renderRadioGroup = (label, value, onChange, options) => (
     <RadioGroup
@@ -167,18 +208,6 @@ const DomicilioTab = ({ state, setState }) => {
           options.coberturaSeñalOptions
         )}
         <TextInputField
-          label="Calle Principal"
-          placeholder="Ingrese calle principal"
-          value={callePrincipal}
-          onChange={(text) => setState({ ...state, callePrincipal: text })}
-        />
-        <TextInputField
-          label="Calle Secundaria"
-          placeholder="Ingrese calle secundaria"
-          value={calleSecundaria}
-          onChange={(text) => setState({ ...state, calleSecundaria: text })}
-        />
-        <TextInputField
           label="Punto de Referencia"
           placeholder="Ingrese punto de referencia"
           value={puntoReferencia}
@@ -210,6 +239,45 @@ const DomicilioTab = ({ state, setState }) => {
           value={vecinoEntrevistado}
           onChange={(text) => setState({ ...state, vecinoEntrevistado: text })}
         />
+
+        <ScrollView contentContainerStyle={styles.containerMaps}>
+          <View style={styles.overlay}>
+            <Icon name="map-marker" size={50} onPress={toggleModal} />
+            <CustomModal
+              visible={showModal}
+              onClose={toggleModal}
+              onLocationSelect={handleLocationSelect}
+            />
+          </View>
+        </ScrollView>
+        <View style={styles.container}>
+          <TextInputField
+            label="GPS"
+            placeholder="Ingrese GPS"
+            value={refGPS}
+            onChange={(text) => setState({ ...state, refGPS: text })}
+            multiline // Campo de texto multilinea
+            numberOfLines={4} // Número de líneas
+            editable={false}
+            pointerEvents="none"
+          />
+          <TextInputField
+            label="Latitud"
+            placeholder="Ingrese calle principal"
+            value={callePrincipal}
+            onChange={(text) => setState({ ...state, callePrincipal: text })}
+            editable={false}
+            pointerEvents="none"
+          />
+          <TextInputField
+            label="Longitud"
+            placeholder="Ingrese calle secundaria"
+            value={calleSecundaria}
+            onChange={(text) => setState({ ...state, calleSecundaria: text })}
+            editable={false}
+            pointerEvents="none"
+          />
+        </View>
       </ScrollView>
     </View>
   );
@@ -295,6 +363,41 @@ const DomicilioImagenesTab = ({ state, setState, type }) => {
 };
 
 const LaboralTab = ({ state, setState }) => {
+  const [showModal, setShowModal] = useState(false);
+  const [location, setLocation] = useState({
+    GpsRef: "",
+    latitud: "",
+    longitud: "",
+  });
+
+  const toggleModal = () => setShowModal(!showModal);
+
+  const handleLocationSelect = (selectedLocation) => {
+    setLocation({
+      latitud: selectedLocation.latitude.toString(),
+      longitud: selectedLocation.longitude.toString(),
+      GpsRef: selectedLocation.address,
+    });
+    toggleModal();
+  };
+
+  const handleSubmit = () => {
+    Alert.alert("Location Submitted", JSON.stringify(location));
+    // Add logic to send location to backend if needed
+  };
+
+  useEffect(() => {
+    // Update callePrincipal and calleSecundaria when location changes
+    if (location.latitud && location.longitud) {
+      setState((prevState) => ({
+        ...prevState,
+        refGPSLab: location.GpsRef,
+        callePrincipalLaboral: location.latitud,
+        calleSecundariaLaboral: location.longitud,
+      }));
+    }
+  }, [location, setState]);
+
   const {
     tipoTrabajo,
     tiempoTrabajo,
@@ -302,6 +405,7 @@ const LaboralTab = ({ state, setState }) => {
     ingresosMensuales,
     actividadLaboral,
     telefonoLaboral,
+    refGPSLab,
     callePrincipalLaboral,
     calleSecundariaLaboral,
     puntoReferenciaLaboral,
@@ -315,6 +419,7 @@ const LaboralTab = ({ state, setState }) => {
       onChange={onChange}
     />
   );
+
   return (
     <ScrollView
       style={styles.container}
@@ -362,20 +467,6 @@ const LaboralTab = ({ state, setState }) => {
         keyboardType="phone-pad"
       />
       <TextInputField
-        label="Calle Principal Laboral"
-        placeholder="Ingrese calle principal"
-        value={callePrincipalLaboral}
-        onChange={(text) => setState({ ...state, callePrincipalLaboral: text })}
-      />
-      <TextInputField
-        label="Calle Secundaria Laboral"
-        placeholder="Ingrese calle secundaria"
-        value={calleSecundariaLaboral}
-        onChange={(text) =>
-          setState({ ...state, calleSecundariaLaboral: text })
-        }
-      />
-      <TextInputField
         label="Punto de Referencia Laboral"
         placeholder="Ingrese punto de referencia"
         value={puntoReferenciaLaboral}
@@ -389,17 +480,62 @@ const LaboralTab = ({ state, setState }) => {
         value={personaEntrevistada}
         onChange={(text) => setState({ ...state, personaEntrevistada: text })}
       />
+      <ScrollView contentContainerStyle={styles.containerMaps}>
+        <View style={styles.overlay}>
+          <Icon name="map-marker" size={50} onPress={toggleModal} />
+          <CustomModal
+            visible={showModal}
+            onClose={toggleModal}
+            onLocationSelect={handleLocationSelect}
+          />
+        </View>
+      </ScrollView>
+      <View style={styles.container}>
+        <TextInputField
+          label="GPS"
+          placeholder="Ingrese GPS"
+          value={refGPSLab}
+          onChange={(text) => setState({ ...state, refGPSLab: text })}
+          multiline // Campo de texto multilinea
+          numberOfLines={4} // Número de líneas
+          editable={false}
+          pointerEvents="none"
+        />
+        <TextInputField
+          label="Latitud"
+          placeholder="Ingrese calle principal"
+          value={callePrincipalLaboral}
+          onChange={(text) =>
+            setState({ ...state, callePrincipalLaboral: text })
+          }
+          editable={false}
+          pointerEvents="none"
+        />
+        <TextInputField
+          label="Longitud"
+          placeholder="Ingrese calle secundaria"
+          value={calleSecundariaLaboral}
+          onChange={(text) =>
+            setState({ ...state, calleSecundariaLaboral: text })
+          }
+          editable={false}
+          pointerEvents="none"
+        />
+      </View>
     </ScrollView>
   );
 };
 
-export function VerificacionClienteScreen({ route }) {
-  const { item } = route.params;
+export function VerificacionClienteScreen({ route, navigation }) {
+  const { item, tipo } = route.params;
+  const [modalVisible, setModalVisible] = useState(false);
+  const [data, setData] = useState({});
   const [state, setState] = useState({
     tiempoVivienda: "",
     valorArrendado: "",
     callePrincipal: "",
     calleSecundaria: "",
+    refGPS: "",
     puntoReferencia: "",
     vecinoEntrevistado: "",
     observacion: "",
@@ -408,20 +544,21 @@ export function VerificacionClienteScreen({ route }) {
     ingresosMensuales: "",
     actividadLaboral: "",
     telefonoLaboral: "",
+    refGPSLab: "",
     callePrincipalLaboral: "",
     calleSecundariaLaboral: "",
     puntoReferenciaLaboral: "",
     personaEntrevistada: "",
     personaEntrevistadaDomicilio: "",
-    tipoVivienda: "Casa",
-    tipocliente: "Cliente",
-    estado: "Muy Bueno",
-    zonas: "Urbano",
+    tipoVivienda: 1,
+    tipocliente: 1,
+    estado: 2,
+    zonas: 1,
     isArrendado: false,
-    propia: "Propio",
-    acceso: "Facil", // Valor por defecto agregado
-    coberturaSeñal: "Llamada Movil", // Valor por defecto agregado
-    tipoTrabajo: "Dependiente",
+    propia: 1,
+    acceso: 1, // Valor por defecto agregado
+    coberturaSeñal: 1, // Valor por defecto agregado
+    tipoTrabajo: 1,
     domicilioImages: [],
     laboralImages: [],
   });
@@ -442,10 +579,11 @@ export function VerificacionClienteScreen({ route }) {
     const rules = {
       domicilio: {
         tiempoVivienda: { min: 1, max: 120, label: "Tiempo de Vivienda" },
-        callePrincipal: { min: 10, max: 249, label: "Calle Principal" },
-        calleSecundaria: { min: 10, max: 249, label: "Calle Secundaria" },
         puntoReferencia: { min: 10, max: 249, label: "Punto de Referencia" },
         vecinoEntrevistado: { min: 1, max: 100, label: "Vecino Entrevistado" },
+        callePrincipal: { min: 1, max: 100, label: "Ubicación Domicilio" },
+        calleSecundaria: { min: 1, max: 100, label: "Ubicación Domicilio" },
+        refGPS: { min: 5, max: 100, label: "Ubicación Domicilio" },
         personaEntrevistadaDomicilio: {
           min: 1,
           max: 100,
@@ -487,6 +625,13 @@ export function VerificacionClienteScreen({ route }) {
           max: 100,
           label: "Persona Entrevistada",
         },
+        callePrincipalLaboral: { min: 1, max: 100, label: "Ubicación Trabajo" },
+        calleSecundariaLaboral: {
+          min: 1,
+          max: 100,
+          label: "Ubicación Trabajo",
+        },
+        refGPSLab: { min: 5, max: 100, label: "Ubicación Trabajo" },
       },
     };
 
@@ -494,7 +639,7 @@ export function VerificacionClienteScreen({ route }) {
     let invalidFields = { domicilio: [], laboral: [] };
 
     // Validar campos de Domicilio
-    if (item.bDomicilio) {
+    if (item.bDomicilio && tipo == 1) {
       for (const [key, { min, max, label }] of Object.entries(
         rules.domicilio
       )) {
@@ -520,7 +665,7 @@ export function VerificacionClienteScreen({ route }) {
     }
 
     // Validar campos de Laboral
-    if (item.bTrabajo) {
+    if (item.bTrabajo && tipo == 2) {
       for (const [key, { min, max, label }] of Object.entries(rules.laboral)) {
         const value = state[key] ? state[key].trim() : "";
         if (value === "") {
@@ -572,18 +717,91 @@ export function VerificacionClienteScreen({ route }) {
       Alert.alert("Problemas de Validación", alertMessage.trim());
       return false;
     }
-
     return true;
+  };
+
+  const saveVerificationDomicilio = async (data, tipoS) => {
+    const url = tipoS === 1 ? APIURL.postTerrenaGestionDomicilioSave() : APIURL.postTerrenaGestionTrabajoSave();
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+      // Verifica si la respuesta fue exitosa
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const responseData = await response.json(); // Obtiene los datos de la respuesta
+      Alert.alert("Éxito", "Datos guardados exitosamente.");
+      navigation.navigate(screen.terreno.tab, {
+        screen: screen.terreno.inicio,
+      });
+
+      // Manejar los datos de respuesta según sea necesario
+    } catch (error) {
+      console.error("Error al guardar los datos:", error);
+      Alert.alert(
+        "Error",
+        "No se pudieron guardar los datos. Intenta nuevamente."
+      );
+    }
   };
 
   const handleSave = () => {
     let valid = validateFields();
     if (valid) {
-      // Save logic here
-      Alert.alert("Éxito", "Datos guardados correctamente.");
+      let newData = {};
+      if (tipo == 1) {
+        newData = {
+          idTerrenaGestionDomicilio: 0,
+          idClienteVerificacion: item.idClienteVerificacion,
+          idTerrenaTipoCliente: state.tipocliente,
+          iTiempoVivienda: state.tiempoVivienda,
+          idTerrenaTipoVivienda: state.tipoVivienda,
+          idTerrenaEstadoVivienda: state.estado,
+          idTerrenaZonaVivienda: state.zonas,
+          idTerrenaPropiedad: state.propia,
+          idTerrenaAcceso: state.acceso,
+          idTerrenaCobertura: state.coberturaSeñal,
+          PuntoReferencia: state.puntoReferencia,
+          PersonaEntrevistada: state.personaEntrevistadaDomicilio,
+          Observaciones: state.observacion,
+          VecinoEntreVisto: state.vecinoEntrevistado,
+          DireccionesVisitada: state.refGPS,
+          Latitud: state.callePrincipal,
+          Longitud: state.calleSecundaria,
+        };
+      } else {
+        newData = {
+          idTerrenaGestionTrabajo: 0,
+          idClienteVerificacion: item.idClienteVerificacion,
+          idTerrenaTipoTrabajo: state.tipoTrabajo,
+          iTiempoTrabajo: state.tiempoTrabajoMeses,
+          iTiempoTrabajoYear: state.tiempoTrabajo,
+          dIngresoTrabajo: state.ingresosMensuales,
+          ActividadTrabajo: state.actividadLaboral,
+          TelefonoTrabajo: state.telefonoLaboral,
+          PuntoReferencia: state.puntoReferenciaLaboral,
+          PersonaEntrevistada: state.personaEntrevistada,
+          DireccionesVisitada: state.refGPSLab,
+          Latitud: state.callePrincipalLaboral,
+          Longitud: state.calleSecundariaLaboral,
+        };
+      }
+
+      setData(newData); // Guardar los datos para pasarlos al modal
+      setModalVisible(true); // Mostrar el modal de confirmación
     }
   };
 
+  const handleConfirm = () => {
+    saveVerificationDomicilio(data, tipo); // Guardar los datos
+    setModalVisible(false); // Cerrar el modal
+  };
   const [isExpanded, setIsExpanded] = useState(true);
 
   const toggleExpand = () => {
@@ -599,7 +817,7 @@ export function VerificacionClienteScreen({ route }) {
         <Text style={styles.cardSubtitle}>{item.Nombres}</Text>
       </View>
       <Tab.Navigator>
-        {item.bDomicilio && (
+        {item.bDomicilio && tipo == 1 && (
           <Tab.Screen
             name="Domicilio"
             options={{
@@ -612,7 +830,7 @@ export function VerificacionClienteScreen({ route }) {
             {() => <DomicilioTab state={state} setState={setState} />}
           </Tab.Screen>
         )}
-        {item.bTrabajo && (
+        {item.bTrabajo && tipo == 2 && (
           <Tab.Screen
             name="Laboral"
             options={{
@@ -625,7 +843,7 @@ export function VerificacionClienteScreen({ route }) {
             {() => <LaboralTab state={state} setState={setState} />}
           </Tab.Screen>
         )}
-        {item.bDomicilio && (
+        {item.bDomicilio && tipo == 1 && (
           <Tab.Screen
             name="ImgDomicilio"
             options={{
@@ -644,7 +862,7 @@ export function VerificacionClienteScreen({ route }) {
             )}
           </Tab.Screen>
         )}
-        {item.bTrabajo && (
+        {item.bTrabajo && tipo == 2 && (
           <Tab.Screen
             name="ImgLaboral"
             options={{
@@ -668,6 +886,11 @@ export function VerificacionClienteScreen({ route }) {
         <Button mode="contained" style={styles.button} onPress={handleSave}>
           Guardar
         </Button>
+        <ConfirmationModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          onConfirm={handleConfirm}
+        />
       </View>
     </View>
   );

@@ -11,8 +11,7 @@ import SplashScreen from "../screens/SplashScreen";
 import { LoginScreen } from "../screens/LoginScreen";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { View, StyleSheet, Text } from "react-native";
-import { LocationTracker } from "../components/Location/Location";
-import LocationSender from "../components/Location/LocationSender";
+
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -135,26 +134,17 @@ const AuthStack = () => (
 export function AppNavigator() {
   const [isCheckingAuth, setIsCheckingAuth] = React.useState(true);
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
-  const [userId, setUserId] = React.useState(null); // Estado para userId
 
   React.useEffect(() => {
     const checkLoginStatus = async () => {
       try {
+        // Simula la verificación del token o del estado de inicio de sesión
         const token = await AsyncStorage.getItem("userToken");
-        if (token) {
-          setIsLoggedIn(true);
-          const storedUserInfo = await AsyncStorage.getItem('userInfo');
-          if (storedUserInfo) {
-            const userInfo = JSON.parse(storedUserInfo);
-            setUserId(userInfo.ingresoCobrador); 
-          }
-        } else {
-          setIsLoggedIn(false);
-        }
+        setIsLoggedIn(!!token); // Cambia esto según el estado real de autenticación
       } catch (error) {
         console.error("Error checking login status:", error);
       } finally {
-        setIsCheckingAuth(false);
+        setIsCheckingAuth(false); // Indica que la verificación ha terminado
       }
     };
 
@@ -162,21 +152,13 @@ export function AppNavigator() {
   }, []);
 
   if (isCheckingAuth) {
-    return <SplashScreen />;
+    return <SplashScreen />; // Muestra el SplashScreen mientras se verifica el estado de autenticación
   }
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {isLoggedIn ? (
-        <Stack.Screen name="Main">
-          {() => (
-            <>
-              <LocationTracker /> 
-              <LocationSender/>
-              <TabNavigator />
-            </>
-          )}
-        </Stack.Screen>
+        <Stack.Screen name="Main" component={TabNavigator} />
       ) : (
         <Stack.Screen name="Auth" component={AuthStack} />
       )}

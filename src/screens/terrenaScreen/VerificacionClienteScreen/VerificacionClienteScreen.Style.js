@@ -7,6 +7,19 @@ export const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: "#f8f9fa",
   },
+  containerMaps: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  overlay: {
+    backgroundColor: "#1c2463",
+    opacity: 0.5,
+    borderRadius: 10,
+    width: "30%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   screenContainer: {
     flex: 1,
     padding: 16,
@@ -142,6 +155,26 @@ export const styles = StyleSheet.create({
     width: '100%',  // Cambiado para que ocupe el 100% del View
     height: '100%',
     marginBottom: 10,
+  },
+  largeInputGroup: {
+    width: '100%',
+    marginBottom: 1,
+    justifyContent: 'space-between',
+    alignContent: 'center',
+    flexDirection: 'row',
+  },
+  floatingButton: {
+    position: 'absolute',
+    bottom: 50, // Adjust this value to position the button higher or lower
+    right: 20, // Adjust this value to position the button left or right
+    backgroundColor: '#2196F3', // Button color
+    borderRadius: 30, // Makes it circular
+    padding: 10, // Button padding
+    elevation: 5, // Adds shadow for Android
+    shadowColor: '#000', // Shadow color for iOS
+    shadowOffset: { width: 0, height: 2 }, // Shadow offset for iOS
+    shadowOpacity: 0.3, // Shadow opacity for iOS
+    shadowRadius: 3, // Shadow radius for iOS
   },
 
 });

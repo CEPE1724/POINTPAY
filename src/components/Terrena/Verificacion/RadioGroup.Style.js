@@ -61,6 +61,12 @@ export const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 2, // Muy poco margen inferior
   },
+  latitudLabel: {
+    fontSize: 50,
+    fontWeight: '600',
+    color: 'red',
+    marginBottom: 2, // Muy poco margen inferior
+  },
   textInput: {
     width: '100%',
     height: 40,

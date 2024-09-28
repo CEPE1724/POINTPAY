@@ -39,9 +39,10 @@ export function InsertGestionscreen({ navigation }) {
 
         // Limpiar el socket al desmontar el componente
         return () => {
+            socket.off('newLocation'); // Deshabilitar el evento específico
             socket.disconnect();
         };
-    }, []);
+    }, []); // Dependencias vacías para que solo se ejecute una vez al montar
 
     return (
         <View style={styles.container}>

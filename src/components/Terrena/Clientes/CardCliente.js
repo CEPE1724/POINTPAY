@@ -2,8 +2,13 @@ import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { styles } from "../../Terrena/Clientes/CardCliente.Screen.style"; // Asegúrate de que la ruta de estilos sea correcta
-
-export function CardCliente({ item, index, onPress, pressedCardIndex }) {
+export function CardCliente({
+  item,
+  index,
+  onPress,
+  pressedCardIndex,
+  handleIconPress,
+}) {
   // Opciones para formatear la fecha y hora
   const options = {
     year: "numeric",
@@ -14,22 +19,19 @@ export function CardCliente({ item, index, onPress, pressedCardIndex }) {
     second: "2-digit",
     hour12: false,
   };
-
   // Mapeo de estados a colores
   const estadoStyles = {
     0: { text: "Pendiente", color: "#28A745" }, // Verde
     1: { text: "Enviado", color: "#FFA500" }, // Naranja
     3: { text: "Anulado", color: "#DC3545" }, // Rojo
   };
-
   // Obtener estado y color
   const estado = estadoStyles[item.iEstado] || {
     text: "Estado desconocido",
     color: "#000",
   };
-
   return (
-    <TouchableOpacity
+    <View
       style={[
         styles.card,
         {
@@ -64,7 +66,39 @@ export function CardCliente({ item, index, onPress, pressedCardIndex }) {
         <Text style={[styles.textProyect, { color: estado.color }]}>
           {estado.text}
         </Text>
+        {item.bDomicilio && item.idTerrenaGestionDomicilio ==0 && (
+          <TouchableOpacity
+            style={styles.iconContainer}
+            onPress={() => handleIconPress(item, 1)} // Pressing home icon
+          >
+            <Icon name="home" size={30} color="white" />
+          </TouchableOpacity>
+        )}
+        {item.bTrabajo && item.idTerrenaGestionTrabajo ==0 &&  (
+          <TouchableOpacity
+            style={styles.iconContainer}
+            onPress={() => handleIconPress(item, 2)} // Pressing work icon
+          >
+            <Icon name="car" size={30} color="white" />
+          </TouchableOpacity>
+        )}
+        { item.idTerrenaGestionDomicilio > 0 && (
+          <TouchableOpacity
+            style={styles.iconContainerView}
+            onPress={() => handleIconPress(item, 1)} // Pressing home icon
+          >
+            <Icon name="street-view" size={30} color="white" />
+          </TouchableOpacity>
+        )}
+        {item.idTerrenaGestionTrabajo > 0 &&  (
+          <TouchableOpacity
+            style={styles.iconContainerView}
+            onPress={() => handleIconPress(item, 2)} // Pressing work icon
+          >
+            <Icon name="address-book" size={30} color="white" />
+          </TouchableOpacity>
+        )}
       </View>
-    </TouchableOpacity>
+    </View>
   );
 }

@@ -7,12 +7,11 @@ export const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   grid: {
-    flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
   },
   card: {
-    width: "48%", // Adjust width to fit two items per row
+    width: "48%", // Ajusta el ancho para que quepan dos elementos por fila
     backgroundColor: "#f8f8f8",
     padding: 10,
     marginBottom: 10,
@@ -41,20 +40,20 @@ export const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   text: {
-    flex: 1, // This will make the text take up all available space
-    fontSize: 12, // Increased font size for better readability
+    flex: 1,
+    fontSize: 12, // Aumentar el tamaño de fuente para mejor legibilidad
     marginBottom: 5,
   },
   textProyect: {
-    flex: 1, // This will make the text take up all available space
-    fontSize: 12, // Increased font size for better readability
+    flex: 1,
+    fontSize: 12,
     marginBottom: 5,
     color: "#a91519",
     fontStyle: "italic",
     fontWeight: "bold",
   },
   icon: {
-    marginLeft: 1, // Adjust this value to increase/decrease the space between text and icon
+    marginLeft: 1,
     marginRight: 5,
   },
   button: {
@@ -102,15 +101,13 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 10,
     marginVertical: 10,
-    borderRadius: 4, // Añadido para bordes redondeados
+    borderRadius: 4,
   },
-
   containersearch: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: 2,
-    color: "red",
   },
   inputContainersearch: {
     flexDirection: "row",
@@ -137,4 +134,44 @@ export const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 20,
   },
+  countContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    padding: 10,
+    marginBottom: 20,
+  },
+  circleBorder: {
+    borderWidth: 10,
+    borderRadius: 60,
+    width: 60,
+    height: 60,
+    justifyContent: "center",
+    alignItems: "center",
+    margin: 5,
+  },
+  totalCircle: {
+    borderWidth: 3,
+    borderColor: "#000", // Color del borde del total
+    borderRadius: 50,
+    width: 80,
+    height: 80,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+    alignSelf: "center", // Centrar el total
+  },
+  circleText: {
+    color: "#000",
+    fontWeight: "bold",
+  },
+  circleTextSubtitle: {
+    color: "#000",
+    fontSize: 6,
+  },
+  totalText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#000",
+  },
 });
+

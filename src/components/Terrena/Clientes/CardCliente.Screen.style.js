@@ -12,7 +12,7 @@ export const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   card: {
-    width: "48%", // Adjust width to fit two items per row
+    width: "95%", // Adjust width to fit two items per row
     backgroundColor: "#f8f8f8",
     padding: 10,
     marginBottom: 10,
@@ -141,5 +141,17 @@ export const styles = StyleSheet.create({
   iconNoData: {
     textAlign: "center",
     marginTop: 20,
+  },
+  iconContainer: {
+    backgroundColor: "#007bff",
+    padding: 5,
+    borderRadius: 5,
+    marginLeft: 5,
+  },
+  iconContainerView: {
+    backgroundColor: "green",
+    padding: 5,
+    borderRadius: 5,
+    marginLeft: 5,
   },
 });
