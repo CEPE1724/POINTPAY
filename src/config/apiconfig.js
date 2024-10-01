@@ -15,4 +15,9 @@ export const APIURL = {
     getClientesVerificionTerrenacountEstado : () =>`${API_BASE_URL}ClientesVerificionTerrena/countEstado`,
     postTerrenaGestionDomicilioSave : () =>`${API_BASE_URL}TerrenaGestionDomicilio/save`,
     postTerrenaGestionTrabajoSave : () =>`${API_BASE_URL}TerrenaGestionTrabajo/save`,
+    /*api buscar por id */
+    getClientesVerificionTerrenaid : (idTerrenaGestionTrabajo) =>`${API_BASE_URL}TerrenaGestionTrabajo/getAll/${idTerrenaGestionTrabajo}`,
+    getClientesVerificacionDomicilioid : (idTerrenaGestionDomicilio) =>`${API_BASE_URL}TerrenaGestionDomicilio/getAll/${idTerrenaGestionDomicilio}`,
+    /*api google*/
+    putGoogle : () =>`${API_BASE_URL}googleApi/google`,
 };

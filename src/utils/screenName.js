@@ -21,6 +21,7 @@ const terrenoStack = {
     tab: "TerrenoTab",
     inicio: "Terreno",
     insert: "TerrenoInsert",
+    search: "TerrenoSearch",
 }
 
 export const screen = {

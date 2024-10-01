@@ -25,7 +25,7 @@ export function ClientesScreen(props) {
   const [userInfoLoaded, setUserInfoLoaded] = useState(false);
   const [filtro, setFiltro] = useState("");
   const [countData, setCountData] = useState([]);
-  
+
   // Inicializa el socket
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -60,7 +60,8 @@ export function ClientesScreen(props) {
   };
 
   const fetchData = async (page = 1, retries = 3) => {
-    if (!userInfoLoaded || loading || (page > 1 && data.length >= totalRecords)) return;
+    if (!userInfoLoaded || loading || (page > 1 && data.length >= totalRecords))
+      return;
 
     setLoading(true);
     try {
@@ -78,11 +79,15 @@ export function ClientesScreen(props) {
       const fetchedData = response.data.registros || [];
       const total = response.data.total || 0;
 
-      setData((prevData) => (page === 1 ? fetchedData : [...prevData, ...fetchedData]));
+      setData((prevData) =>
+        page === 1 ? fetchedData : [...prevData, ...fetchedData]
+      );
       setTotalRecords(total);
     } catch (error) {
       if (retries > 0) {
-        console.error(`Retrying fetch data, attempts remaining: ${retries - 1}`);
+        console.error(
+          `Retrying fetch data, attempts remaining: ${retries - 1}`
+        );
         setTimeout(() => fetchData(page, retries - 1), 1000);
       } else {
         console.error("Error fetching data:", error);
@@ -104,21 +109,35 @@ export function ClientesScreen(props) {
       }, 10000); // 10 seconds
 
       // Limpiar el socket y el intervalo al desmontar el componente
-      return () => {
-        clearInterval(intervalId); // Clear interval
-        socket.disconnect(); // Disconnect socket
-      };
     }
   }, [userInfoLoaded]);
 
   const handleIconPress = (item, tipo) => {
-    navigation.navigate(screen.terreno.insert, { item, tipo });
+    console.log("Item:", item);
+    if (tipo == 1) {
+      if ( item.idTerrenaGestionDomicilio == 0) {
+        navigation.navigate(screen.terreno.insert, { item, tipo });
+      }
+      if ( item.idTerrenaGestionDomicilio > 0) {
+        navigation.navigate(screen.terreno.search, { item, tipo });
+      }
+    }
+    if (tipo == 2) {
+      if ( item.idTerrenaGestionTrabajo == 0) {
+        navigation.navigate(screen.terreno.insert, { item, tipo });
+      }
+      if ( item.idTerrenaGestionTrabajo > 0) {
+        navigation.navigate(screen.terreno.search, { item, tipo });
+      }
+    }
   };
-
   // Calculate totals
-  const totalPendiente = countData.find((item) => item.eSTADO === "PENDIENTE")?.Count || 0;
-  const totalEnviado = countData.find((item) => item.eSTADO === "ENVIADO")?.Count || 0;
-  const totalAnulado = countData.find((item) => item.eSTADO === "ANULADO")?.Count || 0;
+  const totalPendiente =
+    countData.find((item) => item.eSTADO === "PENDIENTE")?.Count || 0;
+  const totalEnviado =
+    countData.find((item) => item.eSTADO === "ENVIADO")?.Count || 0;
+  const totalAnulado =
+    countData.find((item) => item.eSTADO === "ANULADO")?.Count || 0;
   const total = totalPendiente + totalEnviado + totalAnulado;
 
   return (
