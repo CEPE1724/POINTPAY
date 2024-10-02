@@ -48,25 +48,32 @@ export function CardCliente({
       <View style={styles.row}>
         <Icon name="phone" size={20} color="black" style={styles.icon} />
         <Text style={styles.text}>{item.Celular}</Text>
+        <Icon name="phone" size={20} color="black" style={styles.icon} />
+        <Text style={styles.text}>{item.Numero}</Text>
       </View>
       <View style={styles.row}>
         <Icon name="id-card" size={20} color="black" style={styles.icon} />
         <Text style={styles.text}>{item.Ruc}</Text>
+        <Text style={styles.textProyect}>{item.Almacen}</Text>
       </View>
       <View style={styles.row}>
         <Icon name="calendar" size={20} color="black" style={styles.icon} />
         <Text style={styles.text}>
           {new Date(item.FechaSistema).toLocaleString(undefined, options)}
         </Text>
-      </View>
-      <View style={styles.rowProyect}>
-        <Text style={styles.textProyect}>{item.Almacen}</Text>
-      </View>
-      <View style={styles.rowProyect}>
         <Text style={[styles.textProyect, { color: estado.color }]}>
           {estado.text}
         </Text>
-        {item.bDomicilio && item.idTerrenaGestionDomicilio ==0 && (
+      </View>
+      {item.DireccionDomicilio && (<View style={styles.rowProyect}>
+        <Text style={styles.textProyect}>{item.DireccionDomicilio}</Text>
+      </View>
+      )}
+      <View style={styles.rowProyect}>
+      {item.DireccionTrabajo && (
+         <Text style={styles.textProyect}>{item.DireccionTrabajo}</Text>
+      )}
+        {item.bDomicilio && item.idTerrenaGestionDomicilio == 0 && (
           <TouchableOpacity
             style={styles.iconContainer}
             onPress={() => handleIconPress(item, 1)} // Pressing home icon
@@ -74,7 +81,7 @@ export function CardCliente({
             <Icon name="home" size={30} color="white" />
           </TouchableOpacity>
         )}
-        {item.bTrabajo && item.idTerrenaGestionTrabajo ==0 &&  (
+        {item.bTrabajo && item.idTerrenaGestionTrabajo == 0 && (
           <TouchableOpacity
             style={styles.iconContainer}
             onPress={() => handleIconPress(item, 2)} // Pressing work icon
@@ -82,7 +89,7 @@ export function CardCliente({
             <Icon name="car" size={30} color="white" />
           </TouchableOpacity>
         )}
-        { item.idTerrenaGestionDomicilio > 0 && (
+        {item.idTerrenaGestionDomicilio > 0 && (
           <TouchableOpacity
             style={styles.iconContainerView}
             onPress={() => handleIconPress(item, 1)} // Pressing home icon
@@ -90,7 +97,7 @@ export function CardCliente({
             <Icon name="street-view" size={30} color="white" />
           </TouchableOpacity>
         )}
-        {item.idTerrenaGestionTrabajo > 0 &&  (
+        {item.idTerrenaGestionTrabajo > 0 && (
           <TouchableOpacity
             style={styles.iconContainerView}
             onPress={() => handleIconPress(item, 2)} // Pressing work icon

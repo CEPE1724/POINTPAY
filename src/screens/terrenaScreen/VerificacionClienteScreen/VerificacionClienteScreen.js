@@ -723,77 +723,78 @@ export function VerificacionClienteScreen({ route, navigation }) {
   };
 
   const saveVerificationDomicilio = async (data, tipoS) => {
-    console.log("Data a guardar:", data);
+    console.log("Data to save:", data);
     const url =
-      tipoS === 1
-        ? APIURL.postTerrenaGestionDomicilioSave()
-        : APIURL.postTerrenaGestionTrabajoSave();
-    let TipoUrl = tipoS === 1 ? "Domicilio" : "Trabajo";
-    const urlgoogle = APIURL.putGoogle();
+        tipoS === 1
+            ? APIURL.postTerrenaGestionDomicilioSave()
+            : APIURL.postTerrenaGestionTrabajoSave();
+    const tipoUrl = tipoS === 1 ? "Domicilio" : "Trabajo";
+    const urlGoogle = APIURL.putGoogle();
     const uploadedImageUrls = [];
-    let tipoVariable = tipoS === 1 ? "domicilioImages" : "trabajoImages";
+    const tipoVariable = tipoS === 1 ? "domicilioImages" : "trabajoImages";
+
     setLoading(true); // Iniciar el indicador de carga
     try {
-      for (const imagePath of data[tipoVariable]) {
-        const formData = new FormData();
-        formData.append("file", {
-          uri: imagePath,
-          name: `${Date.now()}.jpg`,
-          type: "image/jpeg",
-        });
-        formData.append("cedula", item.Ruc); // Asegúrate de que 'cedula' esté correctamente referenciado
-        formData.append("nombre_del_archivo", `${Date.now()}.jpg`);
-        formData.append("tipo", TipoUrl);
-  
-        // Hacer la solicitud a la API de Google
-        const responseGoogle = await fetch(urlgoogle, {
-          method: "PUT",
-          body: formData,
-        });
-  
-        if (!responseGoogle.ok) {
-          const errorMsg = `Error en la subida de la imagen: ${responseGoogle.status} - ${responseGoogle.statusText}`;
-          console.error(errorMsg);
-          throw new Error(errorMsg);
+        for (const imagePath of data[tipoVariable]) {
+            const formData = new FormData();
+            formData.append("file", {
+                uri: imagePath,
+                name: `${Date.now()}.jpg`,
+                type: "image/jpeg",
+            });
+            formData.append("cedula", item.Ruc); // Asegúrate de que 'cedula' esté correctamente referenciado
+            formData.append("nombre_del_archivo", `${Date.now()}.jpg`);
+            formData.append("tipo", tipoUrl);
+
+            // Hacer la solicitud a la API de Google
+            const responseGoogle = await fetch(urlGoogle, {
+                method: "PUT",
+                body: formData,
+            });
+
+            // Verificar si la respuesta es exitosa
+            if (!responseGoogle.ok) {
+                throw new Error(`Error en la subida de la imagen: ${responseGoogle.status} - ${responseGoogle.statusText}`);
+            }
+
+            const responseGoogleData = await responseGoogle.json();
+
+            // Capturar la URL nueva de la respuesta
+            if (responseGoogleData.status !== "success") {
+                throw new Error(`Error en la respuesta de Google: ${responseGoogleData.message}`);
+            }
+
+            uploadedImageUrls.push(responseGoogleData.url);
         }
-  
-        const responseGoogleData = await responseGoogle.json();
-  
-        // Capturar la URL nueva de la respuesta
-        if (responseGoogleData.status === "success") {
-          uploadedImageUrls.push(responseGoogleData.url);
-        } else {
-          console.error(`Error en la respuesta de Google: ${responseGoogleData.message}`);
-          throw new Error(`Error al subir la imagen: ${responseGoogleData.message}`);
+
+        // Hacer la solicitud para guardar los datos solo si todas las imágenes fueron subidas correctamente
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ ...data, [tipoVariable]: uploadedImageUrls }),
+        });
+
+        // Verificar si la respuesta es exitosa
+        if (!response.ok) {
+            throw new Error(`Error al guardar los datos: ${response.status} - ${response.statusText}`);
         }
-      }
-  
-      // Solo se ejecuta si todas las imágenes fueron subidas correctamente
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ ...data, [tipoVariable]: uploadedImageUrls }),
-      });
-  
-      if (!response.ok) {
-        throw new Error(`Error al guardar los datos: ${response.status} - ${response.statusText}`);
-      }
-  
-      const responseData = await response.json();
-      Alert.alert("Éxito", "Datos guardados exitosamente.");
-      navigation.navigate(screen.terreno.tab, {
-        screen: screen.terreno.inicio,
-      });
-  
+
+        const responseData = await response.json();
+        Alert.alert("Éxito", "Datos guardados exitosamente.");
+        navigation.navigate(screen.terreno.tab, {
+            screen: screen.terreno.inicio,
+        });
+
     } catch (error) {
-      console.error("Error al guardar los datos:", error);
-      Alert.alert("Error", `No se pudieron guardar los datos. ${error.message}`);
+        console.error("Error al guardar los datos:", error);
+        Alert.alert("Error", `No se pudieron guardar los datos. ${error.message}`);
     } finally {
-      setLoading(false); // Finalizar el indicador de carga
+        setLoading(false); // Finalizar el indicador de carga
     }
-  };
+};
+
   
 
   const handleSave = () => {
@@ -805,7 +806,7 @@ export function VerificacionClienteScreen({ route, navigation }) {
           idTerrenaGestionDomicilio: 0,
           idClienteVerificacion: item.idClienteVerificacion,
           idTerrenaTipoCliente: state.tipocliente,
-          iTiempoVivienda: state.tiempoVivienda,
+          iTiempoVivienda: parseInt(state.tiempoVivienda),
           idTerrenaTipoVivienda: state.tipoVivienda,
           idTerrenaEstadoVivienda: state.estado,
           idTerrenaZonaVivienda: state.zonas,
@@ -825,8 +826,8 @@ export function VerificacionClienteScreen({ route, navigation }) {
         newData = {
           idTerrenaGestionTrabajo: 0,
           idClienteVerificacion: item.idClienteVerificacion,
-          idTerrenaTipoTrabajo: state.tipoTrabajo,
-          iTiempoTrabajo: state.tiempoTrabajoMeses,
+          idTerrenaTipoTrabajo: parseInt(state.tipoTrabajo, 10),
+          iTiempoTrabajo: parseInt(state.tiempoTrabajo, 10),
           iTiempoTrabajoYear: state.tiempoTrabajo,
           dIngresoTrabajo: state.ingresosMensuales,
           ActividadTrabajo: state.actividadLaboral,
