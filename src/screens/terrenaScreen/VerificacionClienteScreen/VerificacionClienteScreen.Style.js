@@ -13,12 +13,9 @@ export const styles = StyleSheet.create({
     alignItems: "center",
   },
   overlay: {
-    backgroundColor: "#1c2463",
-    opacity: 0.5,
-    borderRadius: 10,
-    width: "30%",
-    justifyContent: "center",
-    alignItems: "center",
+   position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   screenContainer: {
     flex: 1,
@@ -110,9 +107,9 @@ export const styles = StyleSheet.create({
     marginBottom: 10,
   },
   buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginVertical: 10,
   },
   button: {
     backgroundColor: "#228b22",
@@ -176,5 +173,30 @@ export const styles = StyleSheet.create({
     shadowOpacity: 0.3, // Shadow opacity for iOS
     shadowRadius: 3, // Shadow radius for iOS
   },
-
+  tabButton: {
+    flex: 1,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#228b22',
+    borderRadius: 5,
+    alignItems: 'center',
+    marginHorizontal: 5,
+    backgroundColor: 'transparent',
+    elevation: 2, // Sombra en Android
+    shadowColor: '#000', // Sombra en iOS
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 1.5,
+  },
+  activeTab: {
+    backgroundColor: '#228b22', // Cambia el color del fondo cuando está activo
+    elevation: 5, // Sombra más fuerte cuando está activo
+  },
+  buttonText: {
+    color: '#228b22',
+    fontWeight: 'bold',
+  },
+  activeButtonText: {
+    color: '#fff', // Color del texto cuando el botón está activo
+  },
 });

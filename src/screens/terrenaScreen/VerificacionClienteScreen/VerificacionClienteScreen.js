@@ -530,7 +530,9 @@ const LaboralTab = ({ state, setState }) => {
 export function VerificacionClienteScreen({ route, navigation }) {
   const { item, tipo } = route.params;
   const [modalVisible, setModalVisible] = useState(false);
+  const [showImages, setShowImages] = useState(false); 
   const [data, setData] = useState({});
+  const [activeButton, setActiveButton] = useState('detalles');
   const [loading, setLoading] = useState(false);
   const [state, setState] = useState({
     tiempoVivienda: "",
@@ -859,87 +861,75 @@ export function VerificacionClienteScreen({ route, navigation }) {
   }
   return (
     <View style={styles.screenContainer}>
-      <View style={styles.row}>
-        <Icon name="user" size={20} color="#228b22" style={styles.icon} />
-        <Text style={styles.cardSubtitle}>{item.Nombres}</Text>
-      </View>
-      <Tab.Navigator>
-        {item.bDomicilio && tipo == 1 && (
-          <Tab.Screen
-            name="Domicilio"
-            options={{
-              tabBarIcon: ({ color, size }) => (
-                <Icon name="home" color={color} size={20} /> // Cambia "home" por el ícono que desees
-              ),
-              tabBarLabel: () => null,
-            }}
-          >
-            {() => <DomicilioTab state={state} setState={setState} />}
-          </Tab.Screen>
-        )}
-        {item.bTrabajo && tipo == 2 && (
-          <Tab.Screen
-            name="Laboral"
-            options={{
-              tabBarIcon: ({ color, size }) => (
-                <Icon name="briefcase" color={color} size={20} /> // Cambia "home" por el ícono que desees
-              ),
-              tabBarLabel: () => null,
-            }}
-          >
-            {() => <LaboralTab state={state} setState={setState} />}
-          </Tab.Screen>
-        )}
-        {item.bDomicilio && tipo == 1 && (
-          <Tab.Screen
-            name="ImgDomicilio"
-            options={{
-              tabBarIcon: ({ color, size }) => (
-                <Icon name="image" color={color} size={20} /> // Cambia "home" por el ícono que desees
-              ),
-              tabBarLabel: () => null,
-            }}
-          >
-            {() => (
-              <DomicilioImagenesTab
-                state={state}
-                setState={setState}
-                type="domicilioImages"
-              />
-            )}
-          </Tab.Screen>
-        )}
-        {item.bTrabajo && tipo == 2 && (
-          <Tab.Screen
-            name="ImgLaboral"
-            options={{
-              tabBarIcon: ({ color, size }) => (
-                <Icon name="archive" color={color} size={20} /> // Cambia "home" por el ícono que desees
-              ),
-              tabBarLabel: () => null,
-            }}
-          >
-            {() => (
-              <DomicilioImagenesTab
-                state={state}
-                setState={setState}
-                type="laboralImages"
-              />
-            )}
-          </Tab.Screen>
-        )}
-      </Tab.Navigator>
-      <View style={styles.buttonContainer}>
-        <Button mode="contained" style={styles.button} onPress={handleSave}>
-          Guardar
-        </Button>
-        <LoadingIndicator visible={loading} />
-        <ConfirmationModal
-          visible={modalVisible}
-          onClose={() => setModalVisible(false)}
-          onConfirm={handleConfirm}
-        />
-      </View>
+    <View style={styles.row}>
+      <Icon name="user" size={20} color="#228b22" style={styles.icon} />
+      <Text style={styles.cardSubtitle}>{item.Nombres}</Text>
     </View>
+
+    <View style={styles.buttonContainer}>
+    <TouchableOpacity 
+          style={[styles.tabButton, activeButton === 'detalles' && styles.activeTab]} 
+          onPress={() => {
+            setShowImages(false);
+            setActiveButton('detalles'); // Cambiar el botón activo
+          }}
+        >
+          <Text style={[styles.buttonText, activeButton === 'detalles' && styles.activeButtonText]}>Detalles</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.tabButton, activeButton === 'imagenes' && styles.activeTab]} 
+          onPress={() => {
+            setShowImages(true);
+            setActiveButton('imagenes'); // Cambiar el botón activo
+          }}
+        >
+          <Text style={[styles.buttonText, activeButton === 'imagenes' && styles.activeButtonText]}>Imágenes</Text>
+        </TouchableOpacity>
+    </View>
+
+    <ScrollView>
+      {!showImages ? (
+        // Vista de detalles
+        <>
+          {item.bDomicilio && tipo === 1 && (
+            <DomicilioTab state={state} setState={setState} />
+          )}
+          {item.bTrabajo && tipo === 2 && (
+            <LaboralTab state={state} setState={setState} />
+          )}
+        </>
+      ) : (
+        // Vista de imágenes
+        <>
+          {item.bDomicilio && tipo === 1 && (
+            <DomicilioImagenesTab
+              state={state}
+              setState={setState}
+              type="domicilioImages"
+            />
+          )}
+          {item.bTrabajo && tipo === 2 && (
+            <DomicilioImagenesTab
+              state={state}
+              setState={setState}
+              type="laboralImages"
+            />
+          )}
+        </>
+      )}
+    </ScrollView>
+
+    <View style={styles.buttonContainer}>
+      <Button mode="contained" style={styles.button} onPress={handleSave}>
+        Guardar
+      </Button>
+      <LoadingIndicator visible={loading} />
+      <ConfirmationModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onConfirm={handleConfirm}
+      />
+    </View>
+  </View>
   );
 }
