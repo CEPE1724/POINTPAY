@@ -1,12 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View, Alert, ActivityIndicator } from 'react-native';
-import { WebView } from 'react-native-webview';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import * as Location from 'expo-location';
 
 const CustomModal = ({ visible, onClose, onLocationSelect }) => {
   const [selectedLocation, setSelectedLocation] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [htmlContent, setHtmlContent] = useState('');
+  const [mapRegion, setMapRegion] = useState(null);
+  const [loading, setLoading] = useState(true); // Loading state
+
+  const initialRegion = {
+    latitude: -1.831239,
+    longitude: -78.183405,
+    latitudeDelta: 5,
+    longitudeDelta: 5,
+  };
 
   const fetchCurrentLocation = async () => {
     try {
@@ -16,9 +24,36 @@ const CustomModal = ({ visible, onClose, onLocationSelect }) => {
         return;
       }
 
-      setLoading(true);
+      setLoading(true); // Start loading
       let location = await Location.getCurrentPositionAsync({});
       const { latitude, longitude } = location.coords;
+      const address = await Location.reverseGeocodeAsync({ latitude, longitude });
+
+      const newRegion = {
+        latitude,
+        longitude,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      };
+
+      setSelectedLocation({
+        latitude,
+        longitude,
+        address: formatAddress(address),
+      });
+
+      setMapRegion(newRegion);
+    } catch (error) {
+      console.error('Error al obtener la ubicación actual:', error);
+      Alert.alert('Error', 'No se pudo obtener la ubicación actual.');
+    } finally {
+      setLoading(false); // End loading
+    }
+  };
+
+  const handleMapPress = async (event) => {
+    try {
+      const { latitude, longitude } = event.nativeEvent.coordinate;
       const address = await Location.reverseGeocodeAsync({ latitude, longitude });
 
       setSelectedLocation({
@@ -27,52 +62,18 @@ const CustomModal = ({ visible, onClose, onLocationSelect }) => {
         address: formatAddress(address),
       });
 
-      createMap(latitude, longitude);
+      const newRegion = {
+        latitude,
+        longitude,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      };
+
+      setMapRegion(newRegion);
     } catch (error) {
-      console.error('Error al obtener la ubicación actual:', error);
-      Alert.alert('Error', 'No se pudo obtener la ubicación actual.');
-    } finally {
-      setLoading(false);
+      console.error('Error al seleccionar la ubicación:', error);
+      Alert.alert('Error', 'No se pudo seleccionar la ubicación.');
     }
-  };
-
-  const createMap = (latitude, longitude) => {
-    const mapHtml = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Leaflet Map</title>
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-          <style>
-            body { margin: 0; padding: 0; }
-            #map { width: 100%; height: 100vh; }
-          </style>
-        </head>
-        <body>
-          <div id="map"></div>
-          <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-          <script>
-            const map = L.map('map').setView([${latitude}, ${longitude}], 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-              maxZoom: 19,
-              attribution: '© OpenStreetMap'
-            }).addTo(map);
-            const marker = L.marker([${latitude}, ${longitude}]).addTo(map)
-              .bindPopup('Ubicación actual')
-              .openPopup();
-
-            // Deshabilitar la interacción en el mapa
-            map.dragging.disable();
-            map.touchZoom.disable();
-            map.doubleClickZoom.disable();
-            map.scrollWheelZoom.disable();
-            map.boxZoom.disable();
-          </script>
-        </body>
-      </html>
-    `;
-    setHtmlContent(mapHtml);
   };
 
   const formatAddress = (addressComponents) => {
@@ -93,6 +94,19 @@ const CustomModal = ({ visible, onClose, onLocationSelect }) => {
     }
   }, [visible]);
 
+  useEffect(() => {
+    if (selectedLocation) {
+      const newRegion = {
+        latitude: selectedLocation.latitude,
+        longitude: selectedLocation.longitude,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      };
+
+      setMapRegion(newRegion);
+    }
+  }, [selectedLocation]);
+
   return (
     <Modal
       animationType="slide"
@@ -102,17 +116,30 @@ const CustomModal = ({ visible, onClose, onLocationSelect }) => {
     >
       <View style={styles.modalBackground}>
         <View style={styles.modalContainer}>
-          {loading ? (
+          {loading ? ( // Show loading indicator while fetching location
             <ActivityIndicator size="large" color="#0000ff" />
           ) : (
             <>
-              <WebView
-                originWhitelist={['*']}
-                source={{ html: htmlContent }}
+              <MapView
+                provider={PROVIDER_GOOGLE}
                 style={styles.map}
-                javaScriptEnabled={true}
-                domStorageEnabled={true}
-              />
+                initialRegion={mapRegion || initialRegion}
+               // onPress={handleMapPress} esta opción se deshabilita para que no se pueda seleccionar la ubicación
+              >
+                {selectedLocation && (
+                  <Marker
+                    coordinate={{
+                      latitude: selectedLocation.latitude,
+                      longitude: selectedLocation.longitude,
+                    }}
+                    title="Ubicación seleccionada"
+                    description={selectedLocation.address}
+                  />
+                )}
+              </MapView>
+              <TouchableOpacity onPress={fetchCurrentLocation} style={styles.locationButton}>
+                <Icon name="my-location" size={30} color="white" />
+              </TouchableOpacity>
               {selectedLocation && (
                 <View style={styles.locationDetails}>
                   <Text>Latitud: {selectedLocation.latitude}</Text>
@@ -147,6 +174,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     width: '90%',
     height: '80%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   map: {
     width: '100%',
@@ -154,11 +183,21 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderRadius: 10,
   },
+  locationButton: {
+    position: 'absolute',
+    bottom: 150,
+    right: 30,
+    backgroundColor: '#2196F3',
+    borderRadius: 30,
+    padding: 10,
+    zIndex: 999,
+  },
   locationDetails: {
     marginTop: 10,
     padding: 10,
     backgroundColor: '#f0f0f0',
     borderRadius: 5,
+    width: '100%',
   },
   selectButton: {
     position: 'absolute',

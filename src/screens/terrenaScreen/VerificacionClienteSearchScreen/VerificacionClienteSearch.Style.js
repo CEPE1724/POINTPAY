@@ -26,9 +26,9 @@ export const styles = StyleSheet.create({
     borderRadius: 8,
     elevation: 3, // Sombra en Android
     shadowColor: '#000', // Sombra en iOS
-    shadowOffset: { width: 0, height: 1 }, // Offset para la sombra
-    shadowOpacity: 0.2, // Opacidad de la sombra
-    shadowRadius: 1.5, // Difuminado de la sombra
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.5,
   },
   containerImage: {
     flex: 1,
@@ -89,8 +89,9 @@ export const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   buttonContainer: {
-    marginTop: 16,
-    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginVertical: 10,
   },
   overlay: {
     position: 'absolute',
@@ -101,5 +102,31 @@ export const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  tabButton: {
+    flex: 1,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#228b22',
+    borderRadius: 5,
+    alignItems: 'center',
+    marginHorizontal: 5,
+    backgroundColor: 'transparent',
+    elevation: 2, // Sombra en Android
+    shadowColor: '#000', // Sombra en iOS
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 1.5,
+  },
+  activeTab: {
+    backgroundColor: '#228b22', // Cambia el color del fondo cuando está activo
+    elevation: 5, // Sombra más fuerte cuando está activo
+  },
+  buttonText: {
+    color: '#228b22',
+    fontWeight: 'bold',
+  },
+  activeButtonText: {
+    color: '#fff', // Color del texto cuando el botón está activo
   },
 });

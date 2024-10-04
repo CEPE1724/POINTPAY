@@ -12,14 +12,16 @@ import {
   Platform,
   ScrollView,
   Animated,
-  ActivityIndicator, // Importar ActivityIndicator para mostrar el indicador de carga
+  ActivityIndicator,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import logo from "../../assets/pointLogin.png";
 import { APIURL } from "../config/apiconfig";
 import { useNavigation } from "@react-navigation/native";
-import DateTimePicker from '@react-native-community/datetimepicker'; // Asegúrate de instalar este paquete
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 export function LoginScreen(props) {
   const { navigation } = props;
@@ -30,9 +32,9 @@ export function LoginScreen(props) {
   const [isButtonEnabled, setIsButtonEnabled] = useState(false);
   const [isEmailEditing, setIsEmailEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false); // Estado para manejar la carga
+  const [isLoading, setIsLoading] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [birthdate, setBirthdate] = useState(new Date()); // Estado para la fecha de nacimiento
+  const [birthdate, setBirthdate] = useState(new Date());
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
   const { width, height } = Dimensions.get("window");
@@ -48,8 +50,8 @@ export function LoginScreen(props) {
   };
 
   const handleButtonPress = async () => {
-    if (isLoading) return; // No permitir más clics mientras está cargando
-    
+    if (isLoading) return;
+
     if (!isEmailEntered) {
       if (email === "") {
         Alert.alert("Error", "Por favor ingresa tu correo electrónico.");
@@ -67,9 +69,8 @@ export function LoginScreen(props) {
         Alert.alert("Error", "Por favor ingresa tus credenciales.");
         return;
       }
-      setIsLoading(true); // Activar el estado de carga
+      setIsLoading(true);
 
-      // Simular tiempo de carga adicional
       setTimeout(async () => {
         try {
           const url = APIURL.senLogin();
@@ -85,7 +86,6 @@ export function LoginScreen(props) {
           if (data.estado === "success") {
             await AsyncStorage.setItem("userToken", data.token);
             await AsyncStorage.setItem("userInfo", JSON.stringify(data.usuario));
-            // Redirige a AppNavigator después de un inicio de sesión exitoso
             navigation.replace("Main");
           } else {
             Alert.alert("Error", data.message || "Credenciales incorrectas");
@@ -94,9 +94,9 @@ export function LoginScreen(props) {
           console.error("Error al realizar la solicitud de inicio de sesión:", error);
           Alert.alert("Error", "Hubo un problema al iniciar sesión. Inténtalo de nuevo.");
         } finally {
-          setIsLoading(false); // Desactivar el estado de carga
+          setIsLoading(false);
         }
-      }, 3000); // Simular tiempo de espera adicional
+      }, 3000);
     }
   };
 
@@ -110,77 +110,74 @@ export function LoginScreen(props) {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        <Image
-          source={logo}
-          style={[styles.image, { width: width * 0.8, height: height * 0.3 }]}
-          resizeMode="contain"
-        />
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.subtitle}>Ingresa tu usuario</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Usuario"
-            keyboardType="email-address"
-            value={email}
-            onChangeText={handleEmailChange}
-            onFocus={() => setIsEmailEditing(true)}
-            onBlur={() => setIsEmailEditing(false)}
+        <ScrollView contentContainerStyle={styles.scrollViewContent} keyboardShouldPersistTaps="handled">
+          <Image
+            source={logo}
+            style={[styles.image, { width: width * 0.8, height: height * 0.3 }]}
+            resizeMode="contain"
           />
-        </View>
 
-        {showPasswordFields && (
-          <Animated.View
-            style={[styles.passwordContainer, { opacity: opacityAnim }]}
-          >
-            <View style={styles.inputContainer}>
-              <Text style={styles.subtitle}>Ingresa tu contraseña</Text>
-              <View style={styles.passwordInputContainer}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Password"
-                  secureTextEntry={!showPassword}
-                  value={password}
-                  onChangeText={setPassword}
-                />
-                <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
-                  style={styles.eyeIcon}
-                >
-                  <Icon
-                    name={showPassword ? "visibility" : "visibility-off"}
-                    size={24}
-                    color="#aaa"
+          <View style={styles.inputContainer}>
+            <Text style={styles.subtitle}>Ingresa tu usuario</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Usuario"
+              keyboardType="email-address"
+              value={email}
+              onChangeText={handleEmailChange}
+              onFocus={() => setIsEmailEditing(true)}
+              onBlur={() => setIsEmailEditing(false)}
+            />
+          </View>
+
+          {showPasswordFields && (
+            <Animated.View style={[styles.passwordContainer, { opacity: opacityAnim }]}>
+              <View style={styles.inputContainer}>
+                <Text style={styles.subtitle}>Ingresa tu contraseña</Text>
+                <View style={styles.passwordInputContainer}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Password"
+                    secureTextEntry={!showPassword}
+                    value={password}
+                    onChangeText={setPassword}
                   />
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(!showPassword)}
+                    style={styles.eyeIcon}
+                  >
+                    <Icon
+                      name={showPassword ? "visibility" : "visibility-off"}
+                      size={24}
+                      color="#aaa"
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          </Animated.View>
-        )}
-
-        <TouchableOpacity
-          style={[styles.button, { opacity: isButtonEnabled && !isLoading ? 1 : 0.5 }]}
-          onPress={handleButtonPress}
-          disabled={!isButtonEnabled || isLoading} // Desactivar el botón mientras está cargando
-        >
-          {isLoading ? (
-            <ActivityIndicator size="small" color="#fff" /> // Mostrar indicador de carga
-          ) : (
-            <Text style={styles.buttonText}>
-              {isEmailEntered ? "Iniciar sesión" : "Continuar"}
-            </Text>
+            </Animated.View>
           )}
-        </TouchableOpacity>
 
-        <Text style={styles.version}>V.1.0.0</Text>
+          <TouchableOpacity
+            style={[styles.button, { opacity: isButtonEnabled && !isLoading ? 1 : 0.5 }]}
+            onPress={handleButtonPress}
+            disabled={!isButtonEnabled || isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>
+                {isEmailEntered ? "Iniciar sesión" : "Continuar"}
+              </Text>
+            )}
+          </TouchableOpacity>
 
-      </ScrollView>
-    </KeyboardAvoidingView>
+          <Text style={styles.version}>V.1.0.0</Text>
+
+        </ScrollView>
+    
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -262,3 +259,5 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
 });
+
+export default LoginScreen;

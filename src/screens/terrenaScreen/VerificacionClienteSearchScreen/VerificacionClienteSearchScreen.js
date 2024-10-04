@@ -4,7 +4,7 @@ import {
   View,
   Text,
   ScrollView,
-  Image,
+  Image, TouchableOpacity 
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
@@ -93,14 +93,7 @@ const DomicilioTab = ({ state, setState }) => {
     </View>
   );
   
-  const renderRadioGroup = (label, value, onChange, options) => (
-    <RadioGroup
-      label={label}
-      options={options}
-      value={value}
-      onChange={onChange}
-    />
-  );
+;
 
   const renderRadioGroupvIEW = (label, value, options) => (
     <View style={styles.infoRow}>
@@ -119,17 +112,11 @@ const DomicilioTab = ({ state, setState }) => {
         style={styles.container}
         contentContainerStyle={{ paddingBottom: 60 }}
       >
-        {/* Tipo de cliente */}
         {renderRadioGroupvIEW("Tipo de Cliente :", tipocliente, options.tipoclienteOptions)}
-        {/* tiempo en meses*/}
         {renderInfoRow("clock-o", "Tiempo de Vivienda (Meses):", tiempoVivienda)}
-        {/* Tipo de Vivienda */}
         {renderRadioGroupvIEW("Tipo de Vivienda :", tipoVivienda, options.tipoViviendaOptions)}
-        {/* Estado vivienda */}
         {renderRadioGroupvIEW("Estado Vivienda :", estado, options.estadoOptions)}
-        {/* Zona de Vivienda */}
         {renderRadioGroupvIEW("Zona de Vivienda :", zonas, options.zonaOptions)}
-        {/* Propiedad */}
         {renderRadioGroupvIEW("Propiedad :", propia, options.propiedadOptions)}
         {isArrendado && (
           <TextInputField
@@ -140,9 +127,7 @@ const DomicilioTab = ({ state, setState }) => {
             keyboardType="decimal-pad"
           />
         )}
-        {/* Acceso */}
         {renderRadioGroupvIEW("Acceso :", acceso, options.accesoOptions)}
-        {/* Cobertura de Señal */}
         {renderRadioGroupvIEW("Cobertura de Señal :", coberturaSeñal, options.coberturaSeñalOptions)}
         {renderInfoRow("map-marker", "Punto de Referencia:", puntoReferencia)}
         {renderInfoRow("user", "Persona Entrevistada:", personaEntrevistadaDomicilio)}
@@ -200,7 +185,7 @@ const LaboralTab = ({ state, setState }) => {
   } = state;
   const renderInfoRow = (iconName, label, value) => (
     <View style={styles.infoRow}>
-      <Icon name={iconName} size={24} color="#000" />
+      <Icon name={iconName} size={24} color="#000" accessibilityLabel={label} />
       <View style={styles.textContainer}>
         <Text style={styles.label}>{label}</Text>
         <Text style={styles.value}>{value}</Text>
@@ -208,14 +193,6 @@ const LaboralTab = ({ state, setState }) => {
     </View>
   );
   
-  const renderRadioGroup = (label, value, onChange, options) => (
-    <RadioGroup
-      label={label}
-      options={options}
-      value={value}
-      onChange={onChange}
-    />
-  );
 
   const renderRadioGroupvIEW = (label, value, options) => (
     <View style={styles.infoRow}>
@@ -232,7 +209,6 @@ const LaboralTab = ({ state, setState }) => {
       style={styles.container}
       contentContainerStyle={{ paddingBottom: 60 }}
     >
-      {/* Campos de Laboral */}
       {renderRadioGroupvIEW("Tipo de Trabajo :", tipoTrabajo, options.tipoTrabajoOptions)}
       {renderInfoRow("clock-o", "Tiempo de Trabajo (Meses):", tiempoTrabajoMeses)}
       {renderInfoRow("clock-o", "Tiempo de Trabajo (Años):", tiempoTrabajo)}
@@ -250,16 +226,11 @@ const LaboralTab = ({ state, setState }) => {
 
 export function VerificacionClienteSearchScreen({ route, navigation }) {
   const { item, tipo } = route.params;
-
-  let urlsearch = "";
-  if (tipo == 2) {
-    urlsearch = APIURL.getClientesVerificionTerrenaid(
-      item.idTerrenaGestionTrabajo
-    );
-  } else {
-    urlsearch = APIURL.getClientesVerificacionDomicilioid(
-      item.idTerrenaGestionDomicilio
-    );
+  const [activeTab, setActiveTab] = useState(tipo === 2 ? 'Laboral' : 'Domicilio');
+  const [activeButton, setActiveButton] = useState('detalles');
+  const [showImages, setShowImages] = useState(false); 
+  if (!item) {
+    return <Text>No hay datos de cliente disponibles.</Text>;
   }
 
   const [state, setState] = useState({
@@ -299,16 +270,9 @@ export function VerificacionClienteSearchScreen({ route, navigation }) {
 
   useEffect(() => {
     const fetchData = async () => {
-      let urlsearch = "";
-      if (tipo === 2) {
-        urlsearch = APIURL.getClientesVerificionTerrenaid(
-          item.idTerrenaGestionTrabajo
-        );
-      } else {
-        urlsearch = APIURL.getClientesVerificacionDomicilioid(
-          item.idTerrenaGestionDomicilio
-        );
-      }
+      let urlsearch = tipo === 2 
+        ? APIURL.getClientesVerificionTerrenaid(item.idTerrenaGestionTrabajo)
+        : APIURL.getClientesVerificacionDomicilioid(item.idTerrenaGestionDomicilio);
      
       try {
         const response = await axios.get(urlsearch);
@@ -354,9 +318,12 @@ export function VerificacionClienteSearchScreen({ route, navigation }) {
             }));
 
           }
+        } else {
+          Alert.alert("Error", "No se encontraron datos para el cliente.");
         }
       } catch (error) {
-        console.error("Error fetching data:", error);
+        Alert.alert("Error", "Hubo un problema al obtener los datos.");
+        console.error("Error fetching data: ", error);
       }
     };
 
@@ -365,80 +332,64 @@ export function VerificacionClienteSearchScreen({ route, navigation }) {
 
   if (!item) {
     return <Text>No hay datos de cliente disponibles.</Text>;
-  }
+  } 
   return (
     <View style={styles.screenContainer}>
       <View style={styles.row}>
         <Icon name="user" size={20} color="#228b22" style={styles.icon} />
         <Text style={styles.cardSubtitle}>{item.Nombres}</Text>
       </View>
-      <Tab.Navigator>
-        {item.bDomicilio && tipo == 1 && (
-          <Tab.Screen
-            name="Domicilio"
-            options={{
-              tabBarIcon: ({ color, size }) => (
-                <Icon name="home" color={color} size={20} /> // Cambia "home" por el ícono que desees
-              ),
-              tabBarLabel: () => null,
-            }}
-          >
-            {() => <DomicilioTab state={state} setState={setState} />}
-          </Tab.Screen>
-        )}
-        {item.bTrabajo && tipo == 2 && (
-          <Tab.Screen
-            name="Laboral"
-            options={{
-              tabBarIcon: ({ color, size }) => (
-                <Icon name="briefcase" color={color} size={20} /> // Cambia "home" por el ícono que desees
-              ),
-              tabBarLabel: () => null,
-            }}
-          >
-            {() => <LaboralTab state={state} setState={setState} />}
-          </Tab.Screen>
-        )}
-        {item.bDomicilio && tipo == 1 && (
-          <Tab.Screen
-            name="ImgDomicilio"
-            options={{
-              tabBarIcon: ({ color, size }) => (
-                <Icon name="image" color={color} size={20} /> // Cambia "home" por el ícono que desees
-              ),
-              tabBarLabel: () => null,
-            }}
-          >
-            {() => (
+      
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity 
+          style={[styles.tabButton, activeButton === 'detalles' && styles.activeTab]} 
+          onPress={() => {
+            setShowImages(false);
+            setActiveButton('detalles'); // Cambiar el botón activo
+          }}
+        >
+          <Text style={[styles.buttonText, activeButton === 'detalles' && styles.activeButtonText]}>Detalles</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.tabButton, activeButton === 'imagenes' && styles.activeTab]} 
+          onPress={() => {
+            setShowImages(true);
+            setActiveButton('imagenes'); // Cambiar el botón activo
+          }}
+        >
+          <Text style={[styles.buttonText, activeButton === 'imagenes' && styles.activeButtonText]}>Imágenes</Text>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView>
+        {showImages ? (
+          <>
+            {item.bDomicilio && tipo === 1 && (
               <DomicilioImagenesTab
                 state={state}
                 setState={setState}
                 type="domicilioImages"
               />
             )}
-          </Tab.Screen>
-        )}
-        {item.bTrabajo && tipo == 2 && (
-          <Tab.Screen
-            name="ImgLaboral"
-            options={{
-              tabBarIcon: ({ color, size }) => (
-                <Icon name="archive" color={color} size={20} /> // Cambia "home" por el ícono que desees
-              ),
-              tabBarLabel: () => null,
-            }}
-          >
-            {() => (
+            {item.bTrabajo && tipo === 2 && (
               <DomicilioImagenesTab
                 state={state}
                 setState={setState}
                 type="laboralImages"
               />
             )}
-          </Tab.Screen>
+          </>
+        ) : (
+          <>
+            {item.bDomicilio && tipo === 1 && (
+              <DomicilioTab state={state} setState={setState} />
+            )}
+            {item.bTrabajo && tipo === 2 && (
+              <LaboralTab state={state} setState={setState} />
+            )}
+          </>
         )}
-      </Tab.Navigator>
-      <View style={styles.buttonContainer}></View>
+      </ScrollView>
     </View>
   );
 }
