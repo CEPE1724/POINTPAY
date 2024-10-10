@@ -30,7 +30,7 @@ export function LocationTracker() {
 
   useEffect(() => {
     checkLocationEnabled();
-    const interval = setInterval(checkLocationEnabled, 1000); // Verifica cada 5 segundos
+    const interval = setInterval(checkLocationEnabled, 5000); // Verifica cada 5 segundos
     return () => clearInterval(interval);
   }, []);
 

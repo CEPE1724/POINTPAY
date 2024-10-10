@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Gestionstack } from "./Gestionstack";
@@ -10,74 +10,91 @@ import { screen } from "../utils";
 import SplashScreen from "../screens/SplashScreen";
 import { LoginScreen } from "../screens/LoginScreen";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { View, StyleSheet, Text } from "react-native";
+import { View, StyleSheet, Text, Keyboard } from "react-native";
 import { LocationTracker } from "../components/Location/Location";
-import  LocationSender   from "../components/Location/LocationSender";
+import LocationSender from "../components/Location/LocationSender";
+
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-const TabNavigator = () => (
-  <>
-    <LocationSender />
-    <LocationTracker /> 
+const TabNavigator = () => {
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarActiveTintColor: "#ffffff",
-        tabBarInactiveTintColor: "#ffffff",
-        tabBarStyle: {
-          backgroundColor: "#1c2463",
-          borderTopWidth: 0,
-          borderTopLeftRadius: 20,
-          borderTopRightRadius: 20,
-          overflow: "hidden",
-        },
-        tabBarIcon: ({ color, size, focused }) =>
-          renderIcon(route, color, size, focused),
-        tabBarLabel: ({ focused }) =>
-          focused ? <Text style={styles.label}>{renderLabel(route)}</Text> : null,
-      })}
-    >
-      <Tab.Screen
-        name={screen.drive.tab}
-        component={Gestionstack}
-        options={{ title: "Inicio" }}
-      />
-      <Tab.Screen
-        name={screen.registro.tab}
-        component={Registrostack}
-        options={{ title: "Registros" }}
-      />
-      <Tab.Screen
-        name={screen.terreno.tab}
-        component={Terrenostack}
-        options={{ title: "Terreno" }}
-      />
-      <Tab.Screen
-        name={screen.home.tab}
-        component={AccountStack}
-        options={{
-          tabBarStyle: { display: "none" },
-          title: "Cuenta",
-        }}
-      />
-    </Tab.Navigator>
-  </>
-);
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener("keyboardDidShow", () => {
+      setIsKeyboardVisible(true);
+    });
+    const keyboardDidHideListener = Keyboard.addListener("keyboardDidHide", () => {
+      setIsKeyboardVisible(false);
+    });
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
+
+  return (
+    <>
+      <LocationSender />
+      <LocationTracker />
+
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          headerShown: false,
+          tabBarActiveTintColor: "#ffffff",
+          tabBarInactiveTintColor: "#ffffff",
+          tabBarStyle: {
+            display: isKeyboardVisible ? "none" : "flex", // Oculta el tab bar si el teclado está visible
+            backgroundColor: "#1c2463",
+            borderTopWidth: 0,
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            overflow: "hidden",
+          },
+          tabBarIcon: ({ color, size, focused }) =>
+            renderIcon(route, color, size, focused),
+          tabBarLabel: ({ focused }) =>
+            focused ? <Text style={styles.label}>{renderLabel(route)}</Text> : null,
+        })}
+      >
+        <Tab.Screen
+          name={screen.drive.tab}
+          component={Gestionstack}
+          options={{ title: "Inicio" }}
+        />
+        <Tab.Screen
+          name={screen.registro.tab}
+          component={Registrostack}
+          options={{ title: "Registros" }}
+        />
+        <Tab.Screen
+          name={screen.terreno.tab}
+          component={Terrenostack}
+          options={{ title: "Terreno" }}
+        />
+        <Tab.Screen
+          name={screen.home.tab}
+          component={AccountStack}
+          options={{
+            tabBarStyle: { display: "none" },
+            title: "Cuenta",
+          }}
+        />
+      </Tab.Navigator>
+    </>
+  );
+};
 
 function renderIcon(route, color, size, focused) {
   let iconName;
   if (route.name === screen.home.tab) {
     iconName = "account-circle";
-  }
-  if (route.name === screen.drive.tab) {
+  } else if (route.name === screen.drive.tab) {
     iconName = "home";
-  }
-  if (route.name === screen.registro.tab) {
+  } else if (route.name === screen.registro.tab) {
     iconName = "book";
-  }
-  if (route.name === screen.terreno.tab) {
+  } else if (route.name === screen.terreno.tab) {
     iconName = "terrain";
   }
 

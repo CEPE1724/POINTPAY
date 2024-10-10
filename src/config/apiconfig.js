@@ -20,4 +20,12 @@ export const APIURL = {
     getClientesVerificacionDomicilioid : (idTerrenaGestionDomicilio) =>`${API_BASE_URL}TerrenaGestionDomicilio/getAll/${idTerrenaGestionDomicilio}`,
     /*api google*/
     putGoogle : () =>`${API_BASE_URL}googleApi/google`,
+    /* api busca productos*/
+    getProducto : () =>`${API_BASE_URL}SolicitudNCListaProductos/all`,
+    Cbo_EstadosGestion : () =>`${API_BASE_URL}Cbo_EstadosGestion/list`,
+    getEstadosTipoContacto: (selectedOption) => `${API_BASE_URL}Cbo_EstadosTipocontacto/list?idCbo_EstadoGestion=${selectedOption}`,
+    getResultadoGestion: (selectTipoContacto) => `${API_BASE_URL}Cbo_ResultadoGestion/list?idCbo_EstadoGestion=${selectTipoContacto}`,
+    postCbo_GestionesDeCobranzas : () =>`${API_BASE_URL}Cbo_GestionesDeCobranzas/insert`,
+    /*api bancos*/
+    getBancos : () =>`${API_BASE_URL}SolicitudNCListaProductos/bancos`,
 };

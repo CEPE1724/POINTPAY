@@ -23,6 +23,8 @@ import { useNavigation } from "@react-navigation/native";
 import { screen } from "../../../utils/screenName";
 import { ConfirmationModal } from "../../../components/Terrena";
 import { LoadingIndicator } from "../../../components/Terrena";
+import NetInfo from "@react-native-community/netinfo";
+
 const Tab = createMaterialTopTabNavigator();
 const options = {
   tipoclienteOptions: [
@@ -724,124 +726,143 @@ export function VerificacionClienteScreen({ route, navigation }) {
     return true;
   };
 
+ 
   const saveVerificationDomicilio = async (data, tipoS) => {
-    console.log("Data to save:", data);
-    const url =
-        tipoS === 1
-            ? APIURL.postTerrenaGestionDomicilioSave()
-            : APIURL.postTerrenaGestionTrabajoSave();
-    const tipoUrl = tipoS === 1 ? "Domicilio" : "Trabajo";
-    const urlGoogle = APIURL.putGoogle();
-    const uploadedImageUrls = [];
-    const tipoVariable = tipoS === 1 ? "domicilioImages" : "trabajoImages";
-
-    setLoading(true); // Iniciar el indicador de carga
-    try {
-        for (const imagePath of data[tipoVariable]) {
-            const formData = new FormData();
-            formData.append("file", {
-                uri: imagePath,
-                name: `${Date.now()}.jpg`,
-                type: "image/jpeg",
-            });
-            formData.append("cedula", item.Ruc); // Asegúrate de que 'cedula' esté correctamente referenciado
-            formData.append("nombre_del_archivo", `${Date.now()}.jpg`);
-            formData.append("tipo", tipoUrl);
-
-            // Hacer la solicitud a la API de Google
-            const responseGoogle = await fetch(urlGoogle, {
-                method: "PUT",
-                body: formData,
-            });
-
-            // Verificar si la respuesta es exitosa
-            if (!responseGoogle.ok) {
-                throw new Error(`Error en la subida de la imagen: ${responseGoogle.status} - ${responseGoogle.statusText}`);
-            }
-
-            const responseGoogleData = await responseGoogle.json();
-
-            // Capturar la URL nueva de la respuesta
-            if (responseGoogleData.status !== "success") {
-                throw new Error(`Error en la respuesta de Google: ${responseGoogleData.message}`);
-            }
-
-            uploadedImageUrls.push(responseGoogleData.url);
-        }
-
-        // Hacer la solicitud para guardar los datos solo si todas las imágenes fueron subidas correctamente
-        const response = await fetch(url, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ ...data, [tipoVariable]: uploadedImageUrls }),
-        });
-
-        // Verificar si la respuesta es exitosa
-        if (!response.ok) {
-            throw new Error(`Error al guardar los datos: ${response.status} - ${response.statusText}`);
-        }
-
-        const responseData = await response.json();
-        Alert.alert("Éxito", "Datos guardados exitosamente.");
-        navigation.navigate(screen.terreno.tab, {
-            screen: screen.terreno.inicio,
-        });
-
-    } catch (error) {
-        console.error("Error al guardar los datos:", error);
-        Alert.alert("Error", `No se pudieron guardar los datos. ${error.message}`);
-    } finally {
-        setLoading(false); // Finalizar el indicador de carga
-    }
-};
-
+      console.log("Data to savesss:", data);
+      const url =
+          tipoS === 1
+              ? APIURL.postTerrenaGestionDomicilioSave()
+              : APIURL.postTerrenaGestionTrabajoSave();
+      const tipoUrl = tipoS === 1 ? "Domicilio" : "Trabajo";
+      const urlGoogle = APIURL.putGoogle();
+      const uploadedImageUrls = [];
+      const tipoVariable = tipoS === 1 ? "domicilioImages" : "trabajoImages";
   
-
+      setLoading(true); // Iniciar el indicador de carga
+  
+      // Verificar conectividad a Internet
+      const state = await NetInfo.fetch();
+      if (!state.isConnected) {
+          Alert.alert("Error", "No hay conexión a Internet.");
+          setLoading(false);
+          return;
+      }
+  
+      try {
+          for (const imagePath of data[tipoVariable]) {
+              const formData = new FormData();
+              formData.append("file", {
+                  uri: imagePath,
+                  name: `${Date.now()}.jpg`,
+                  type: "image/jpeg",
+              });
+              formData.append("cedula", item.Ruc); // Asegúrate de que 'cedula' esté correctamente referenciado
+              formData.append("nombre_del_archivo", `${Date.now()}.jpg`);
+              formData.append("tipo", tipoUrl);
+  
+              // Hacer la solicitud a la API de Google
+              const responseGoogle = await fetch(urlGoogle, {
+                  method: "PUT",
+                  body: formData,
+              });
+  
+              // Verificar si la respuesta es exitosa
+              if (!responseGoogle.ok) {
+                  const errorResponse = await responseGoogle.json();
+                  throw new Error(`Error en la subida de la imagen: ${responseGoogle.status} - ${errorResponse.message || responseGoogle.statusText}`);
+              }
+  
+              const responseGoogleData = await responseGoogle.json();
+  
+              // Capturar la URL nueva de la respuesta
+              if (responseGoogleData.status !== "success") {
+                  throw new Error(`Error en la respuesta de Google: ${responseGoogleData.message}`);
+              }
+  
+              uploadedImageUrls.push(responseGoogleData.url);
+          }
+  
+          // Hacer la solicitud para guardar los datos solo si todas las imágenes fueron subidas correctamente
+          const response = await fetch(url, {
+              method: "POST",
+              headers: {
+                  "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ ...data, [tipoVariable]: uploadedImageUrls }),
+          });
+  
+          // Verificar si la respuesta es exitosa
+          if (!response.ok) {
+              const errorResponse = await response.json(); // Captura el cuerpo de la respuesta
+              throw new Error(`Error al guardar los datos: ${response.status} - ${errorResponse.message || response.statusText}`);
+          }
+  
+          const responseData = await response.json();
+          Alert.alert("Éxito", "Datos guardados exitosamente.");
+          navigation.navigate(screen.terreno.tab, {
+              screen: screen.terreno.inicio,
+          });
+  
+      } catch (error) {
+          console.error("Error al guardar los datos final:", error.message); // Solo imprimir el mensaje del error
+  
+          // Manejo de errores específicos
+          if (error.message.includes("401")) {
+              Alert.alert("Error", "No autorizado. Verifique sus credenciales.");
+          } else if (error.message.includes("500")) {
+              Alert.alert("Error", "Error interno en el servidor. Inténtelo más tarde.");
+          } else {
+              Alert.alert("Error", `No se pudieron guardar los datos. ${error.message}`);
+          }
+      } finally {
+          setLoading(false); // Finalizar el indicador de carga
+      }
+  };
+  
   const handleSave = () => {
     let valid = validateFields();
     if (valid) {
       let newData = {};
-      if (tipo == 1) {
+      if (tipo === 1) {
         newData = {
-          idTerrenaGestionDomicilio: 0,
-          idClienteVerificacion: item.idClienteVerificacion,
-          idTerrenaTipoCliente: state.tipocliente,
-          iTiempoVivienda: parseInt(state.tiempoVivienda),
-          idTerrenaTipoVivienda: state.tipoVivienda,
-          idTerrenaEstadoVivienda: state.estado,
-          idTerrenaZonaVivienda: state.zonas,
-          idTerrenaPropiedad: state.propia,
-          idTerrenaAcceso: state.acceso,
-          idTerrenaCobertura: state.coberturaSeñal,
-          PuntoReferencia: state.puntoReferencia,
-          PersonaEntrevistada: state.personaEntrevistadaDomicilio,
-          Observaciones: state.observacion,
-          VecinoEntreVisto: state.vecinoEntrevistado,
-          DireccionesVisitada: state.refGPS,
-          Latitud: state.callePrincipal,
-          Longitud: state.calleSecundaria,
-          domicilioImages: state.domicilioImages,
+            idTerrenaGestionDomicilio: 0,
+            idClienteVerificacion: parseInt(item.idClienteVerificacion, 10),
+            idTerrenaTipoCliente: parseInt(state.tipocliente, 10),
+            iTiempoVivienda: parseInt(state.tiempoVivienda, 10),
+            idTerrenaTipoVivienda: parseInt(state.tipoVivienda, 10),
+            idTerrenaEstadoVivienda: parseInt(state.estado, 10) || 1,
+            idTerrenaZonaVivienda: parseInt(state.zonas, 10) || 1,
+            idTerrenaPropiedad: parseInt(state.propia, 10) || 1,
+            idTerrenaAcceso: parseInt(state.acceso, 10) || 1,
+            idTerrenaCobertura: parseInt(state.coberturaSeñal, 10) || 1,
+            PuntoReferencia: state.puntoReferencia || "",
+            PersonaEntrevistada: state.personaEntrevistadaDomicilio || "",
+            Observaciones: state.observacion || "",
+            VecinoEntreVisto: state.vecinoEntrevistado || "",
+            DireccionesVisitada: state.refGPS || "",
+            Latitud: state.callePrincipal || "",
+            Longitud: state.calleSecundaria || "",
+            domicilioImages: state.domicilioImages || [],
         };
-      } else {
+    } else {
         newData = {
-          idTerrenaGestionTrabajo: 0,
-          idClienteVerificacion: item.idClienteVerificacion,
-          idTerrenaTipoTrabajo: parseInt(state.tipoTrabajo, 10),
-          iTiempoTrabajo: parseInt(state.tiempoTrabajo, 10),
-          iTiempoTrabajoYear: state.tiempoTrabajo,
-          dIngresoTrabajo: state.ingresosMensuales,
-          ActividadTrabajo: state.actividadLaboral,
-          TelefonoTrabajo: state.telefonoLaboral,
-          PuntoReferencia: state.puntoReferenciaLaboral,
-          PersonaEntrevistada: state.personaEntrevistada,
-          DireccionesVisitada: state.refGPSLab,
-          Latitud: state.callePrincipalLaboral,
-          Longitud: state.calleSecundariaLaboral,
-          trabajoImages: state.laboralImages,
+            idTerrenaGestionTrabajo: 0,
+            idClienteVerificacion: item.idClienteVerificacion,
+            idTerrenaTipoTrabajo: parseInt(state.tipoTrabajo, 10) || 1,
+            iTiempoTrabajo: parseInt(state.tiempoTrabajoMeses, 10) || 1,
+            iTiempoTrabajoYear: parseInt(state.tiempoTrabajo, 10) || 1,
+            dIngresoTrabajo: state.ingresosMensuales || 0,
+            ActividadTrabajo: state.actividadLaboral || "",
+            TelefonoTrabajo: state.telefonoLaboral || "",
+            PuntoReferencia: state.puntoReferenciaLaboral || "",
+            PersonaEntrevistada: state.personaEntrevistada || "",
+            DireccionesVisitada: state.refGPSLab || "",
+            Latitud: state.callePrincipalLaboral || "",
+            Longitud: state.calleSecundariaLaboral || "",
+            trabajoImages: state.laboralImages || [],
         };
-      }
+    }
+
       setData(newData); // Guardar los datos para pasarlos al modal
       setModalVisible(true); // Mostrar el modal de confirmación
     }

@@ -6,8 +6,79 @@ import io from 'socket.io-client';
 
 const LocationSender = () => {
   const [lastLocation, setLastLocation] = useState(null);
-  const socketRef = useRef(null); // Mantén la referencia del socket
-  const subscriptionRef = useRef(null); // Referencia para la suscripción a la ubicación
+  const socketRef = useRef(null);
+  const subscriptionRef = useRef(null);
+
+  // Función de debounce para limitar la frecuencia de las actualizaciones
+  const debounce = (func, wait) => {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  };
+
+  const sendLocationToApi = async (newLocation) => {
+    try {
+      const storedUserInfo = await AsyncStorage.getItem("userInfo");
+      const userInfo = storedUserInfo ? JSON.parse(storedUserInfo) : {};
+      const idUser = userInfo.ingresoCobrador ? userInfo.ingresoCobrador.idIngresoCobrador : null;
+
+      if (!idUser || !newLocation || !newLocation.coords) {
+        console.error('Datos inválidos, no se enviará la ubicación.');
+        return;
+      }
+
+      console.log('Enviando ubicación:', newLocation);
+      const url = APIURL.postUbicacionesAPPlocation();
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          idUser: idUser,
+          latitude: newLocation.coords.latitude,
+          longitude: newLocation.coords.longitude,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error en la solicitud');
+      }
+
+      socketRef.current.emit('newLocation', { idUser, ...newLocation.coords });
+    } catch (error) {
+      console.error('Error enviando ubicación:', error);
+      await saveLocationToStorage(newLocation);
+    }
+  };
+
+  const saveLocationToStorage = async (newLocation) => {
+    try {
+      const storedLocations = await AsyncStorage.getItem('offlineLocations');
+      const locations = storedLocations ? JSON.parse(storedLocations) : [];
+      locations.push({
+        latitude: newLocation.coords.latitude,
+        longitude: newLocation.coords.longitude,
+        timestamp: newLocation.timestamp,
+      });
+      await AsyncStorage.setItem('offlineLocations', JSON.stringify(locations));
+    } catch (error) {
+      console.error('Error guardando ubicación:', error);
+    }
+  };
+
+  // Utiliza debounce para limitar la frecuencia de envío de ubicación
+  const saveLocation = debounce((newLocation) => {
+    console.log('Guardando ubicación sin cambios:', newLocation);
+    sendLocationToApi(newLocation);
+    setLastLocation(newLocation);
+  }, 3000); // Envíos cada 3 segundos como máximo
 
   useEffect(() => {
     // Inicializa el socket
@@ -18,7 +89,6 @@ const LocationSender = () => {
       console.error('Error al inicializar el socket:', error);
     }
 
-    // Manejo de conexión del socket
     const connectSocket = () => {
       socketRef.current.on('connect', () => {
         console.log('Conectado al servidor de sockets');
@@ -30,63 +100,6 @@ const LocationSender = () => {
     };
 
     connectSocket();
-
-    const sendLocationToApi = async (newLocation) => {
-      try {
-        const storedUserInfo = await AsyncStorage.getItem("userInfo");
-        const userInfo = storedUserInfo ? JSON.parse(storedUserInfo) : {};
-        const idUser = userInfo.ingresoCobrador ? userInfo.ingresoCobrador.idIngresoCobrador : null;
-
-        if (!idUser || !newLocation || !newLocation.coords) {
-          console.error('Datos inválidos, no se enviará la ubicación.');
-          return;
-        }
-
-        console.log('Enviando ubicación:', newLocation); // Agregar para depuración
-        const url = APIURL.postUbicacionesAPPlocation();
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            idUser: idUser,
-            latitude: newLocation.coords.latitude,
-            longitude: newLocation.coords.longitude,
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Error en la solicitud');
-        }
-
-        socketRef.current.emit('newLocation', { idUser, ...newLocation.coords });
-      } catch (error) {
-        console.error('Error enviando ubicación:', error);
-        await saveLocationToStorage(newLocation);
-      }
-    };
-
-    const saveLocationToStorage = async (newLocation) => {
-      try {
-        const storedLocations = await AsyncStorage.getItem('offlineLocations');
-        const locations = storedLocations ? JSON.parse(storedLocations) : [];
-        locations.push({
-          latitude: newLocation.coords.latitude,
-          longitude: newLocation.coords.longitude,
-          timestamp: newLocation.timestamp,
-        });
-        await AsyncStorage.setItem('offlineLocations', JSON.stringify(locations));
-      } catch (error) {
-        console.error('Error guardando ubicación:', error);
-      }
-    };
-
-    const saveLocation = (newLocation) => {
-      console.log('Guardando ubicación sin cambios:', newLocation); // Para depuración
-      sendLocationToApi(newLocation);
-      setLastLocation(newLocation);
-    };
 
     const getLocationUpdates = async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();

@@ -15,6 +15,7 @@ const registroStack = {
     inicio: "Registros",
     insert: "RegistroInsert",
     insertCall: "RegistroInsertCall",
+    product: "Productos",
 }
 
 const terrenoStack = {

@@ -1,15 +1,23 @@
+// src/components/KeyboardAvoidingWrapper/KeyboardAvoidingWrapper.js
 import React from 'react';
-import { KeyboardAvoidingView, ScrollView, Platform, StyleSheet } from 'react-native';
+import { KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 
-export function KeyboardAvoidingWrapper  ({ children })  {
-    console.log("KeyboardAvoidingWrapper rendered");
+const KeyboardAvoidingWrapper = ({ children }) => {
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 0}
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 40 : 0} // Ajusta según necesites
     >
       {children}
     </KeyboardAvoidingView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});
+
+export default KeyboardAvoidingWrapper;
