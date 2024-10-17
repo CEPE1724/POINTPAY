@@ -3,13 +3,14 @@ import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { APIURL } from '../../config/apiconfig';
 import io from 'socket.io-client';
+import NetInfo from '@react-native-community/netinfo';
 
 const LocationSender = () => {
   const [lastLocation, setLastLocation] = useState(null);
+  const [isConnected, setIsConnected] = useState(true); // Estado de conexión
   const socketRef = useRef(null);
   const subscriptionRef = useRef(null);
 
-  // Función de debounce para limitar la frecuencia de las actualizaciones
   const debounce = (func, wait) => {
     let timeout;
     return function executedFunction(...args) {
@@ -23,6 +24,12 @@ const LocationSender = () => {
   };
 
   const sendLocationToApi = async (newLocation) => {
+    if (!isConnected) {
+      console.log('No hay conexión a Internet, guardando ubicación localmente.');
+      await saveLocationToStorage(newLocation);
+      return;
+    }
+
     try {
       const storedUserInfo = await AsyncStorage.getItem("userInfo");
       const userInfo = storedUserInfo ? JSON.parse(storedUserInfo) : {};
@@ -73,15 +80,18 @@ const LocationSender = () => {
     }
   };
 
-  // Utiliza debounce para limitar la frecuencia de envío de ubicación
   const saveLocation = debounce((newLocation) => {
     console.log('Guardando ubicación sin cambios:', newLocation);
     sendLocationToApi(newLocation);
     setLastLocation(newLocation);
-  }, 3000); // Envíos cada 3 segundos como máximo
+  }, 3000);
 
   useEffect(() => {
-    // Inicializa el socket
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setIsConnected(state.isConnected); // Actualiza el estado de conexión
+      console.log("Conexión a Internet:", state.isConnected);
+    });
+
     try {
       socketRef.current = io(APIURL.socketEndpoint());
       console.log('Conectando al servidor de sockets...');
@@ -108,8 +118,8 @@ const LocationSender = () => {
       subscriptionRef.current = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.High,
-          timeInterval: 300000, // Actualiza cada 5 minutos
-          distanceInterval: 50, // Actualiza si se mueve 50 metros
+          timeInterval: 300000,
+          distanceInterval: 50,
         },
         (newLocation) => {
           saveLocation(newLocation);
@@ -119,7 +129,6 @@ const LocationSender = () => {
 
     getLocationUpdates();
 
-    // Intenta enviar ubicaciones almacenadas al inicio
     const sendStoredLocations = async () => {
       const storedLocations = await AsyncStorage.getItem('offlineLocations');
       if (storedLocations) {
@@ -138,7 +147,7 @@ const LocationSender = () => {
     sendStoredLocations();
 
     return () => {
-      // Limpieza al desmontar el componente
+      unsubscribe(); // Limpiar el listener de conectividad
       if (subscriptionRef.current) {
         subscriptionRef.current.remove();
       }

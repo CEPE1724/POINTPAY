@@ -27,7 +27,7 @@ export function ComprobanteModal({
   setImages,
   onAccept,
   bancos, // Recibe la lista de bancos
-  setSelectedResultado,
+  setSelectedTipoPago
 }) {
   return (
     <Modal
@@ -137,7 +137,7 @@ export function ComprobanteModal({
                 setModalVisible(false); // Cierra el modal
                 setSelectedBanco(""); // Resetea el banco seleccionado si deseas
                 setImages([]); // Resetea las imágenes
-                setSelectedResultado(""); // Resetea el resultado seleccionado
+                setSelectedTipoPago(""); // Resetea el resultado seleccionado
               }}
             >
               <Icon

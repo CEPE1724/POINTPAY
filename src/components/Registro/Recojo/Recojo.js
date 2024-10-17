@@ -140,32 +140,23 @@ export function Recojo({ route, setModalVisibleRecojo, setSubmittedDataRecojo, s
     setSelectedResultado("");
   };
   const handleAccept = () => {
-    const hasSelectedItems = Object.values(selectedProducts).some(
-      (selected) => selected
-    );
-
+    const hasSelectedItems = Object.values(selectedProducts).some(selected => selected);
     if (!hasSelectedItems) {
-      Alert.alert(
-        "Error",
-        "Debes seleccionar al menos un artículo antes de proceder."
-      );
-      return; // Sale de la función si no hay selecciones
+        Alert.alert("Error", "Debes seleccionar al menos un artículo antes de proceder.");
+        return;
     }
     if (validateSelections()) {
-      const dataToSubmit = Object.keys(selectedProducts)
-        .filter((id) => selectedProducts[id])
-        .map((id) => ({
-          idDetCompra: id,
-          observaciones: observations[id] || "",
-          imagenes: images[id] || [],
+        const dataToSubmit = Object.keys(selectedProducts).filter(id => selectedProducts[id]).map(id => ({
+            idDetCompra: id,
+            observaciones: observations[id] || "",
+            imagenes: images[id] || [],
         }));
-
-      setSubmittedData(dataToSubmit);
-      setSubmittedDataRecojo(submittedData); // Guardar los datos
-     // Alert.alert("Éxito", JSON.stringify(dataToSubmit, null, 2)); // Muestra la información en formato JSON
-      setModalVisibleRecojo(false);// Aquí puedes manejar la lógica de aceptación, como enviar los datos a la API.
+        setSubmittedData(dataToSubmit);
+        setSubmittedDataRecojo(dataToSubmit);
+        setModalVisibleRecojo(false);
     }
-  };
+};
+
 
   const renderItem = ({ item }) => (
     <View style={styles.card}>

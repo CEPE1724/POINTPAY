@@ -6,9 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Modal,
-  Image,
-  Button,
+  Modal
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker"; // Asegúrate de tener esta librería
 import Icon from "react-native-vector-icons/FontAwesome";
@@ -20,6 +18,11 @@ import { Picker } from "@react-native-picker/picker";
 import * as ImagePicker from "expo-image-picker";
 import { ComprobanteModal } from "../../../components/Registro/ComprobanteModal";
 import { Recojo } from "../../../components/Registro";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AlertComponent } from "../../../components/Registro/AlertComponent"; // Asegúrate de importar el componente AlertComponent
+import { ConfirmationModal } from "../../../components/Terrena";
+import { LoadingIndicator } from "../../../components/Terrena";
+import { handleGuardar } from "./handleGuardar"; // Asegúrate de importar la función handleGuardar
 export function InsertScreen({ route, navigation }) {
   const { item } = route.params;
   const [items, setItems] = useState([]);
@@ -39,8 +42,46 @@ export function InsertScreen({ route, navigation }) {
   const [selectedBanco, setSelectedBanco] = useState("");
   const [modalVisibleRecojo, setModalVisibleRecojo] = useState(false);
   const [submittedDataRecojo, setSubmittedDataRecojo] = useState([]);
-  const [observations, setObservations] = useState({});
+  const [observations, setObservations] = useState("");
+  const [userInfo, setUserInfo] = useState({ ingresoCobrador: "" });
+  const [optionsTipoPago, setOptionsTipoPago] = useState([]);
+  const [selectedTipoPago, setSelectedTipoPago] = useState(""); // Estado para el valor seleccionado
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertIcon, setAlertIcon] = useState(""); // Estado para el ícono
+  const [alertColor, setAlertColor] = useState(""); // Estado para el color del mensaje
+  const [summitDataTransfer, setSummitDataTransfer] = useState({
+    comprobante: "",
+    images: [],
+    number: 0,
+    selectedBanco: null,
+  });
+  const [loading, setLoading] = useState(false);
+  const [dataGestion, setDataGestion] = useState([]);
+  const [modalVisibleOk, setModalVisibleOk] = useState(false);
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const storedUserInfo = await AsyncStorage.getItem("userInfo");
+        if (storedUserInfo) {
+          const user = JSON.parse(storedUserInfo);
+          setUserInfo({
+            ingresoCobrador: user.ingresoCobrador.idIngresoCobrador || "",
+            Usuario: user.ingresoCobrador.codigo || "",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching user info:", error);
+      }
+    };
 
+    fetchUserInfo();
+  }, []);
+
+  const TipoPago = [
+    { id: 1, name: "EFECTIVO" },
+    { id: 2, name: "TRANSFERENCIA" },
+  ];
   const getColorForValue = (projected, collected) => {
     if (collected < projected && collected > 0) return "#e28743"; // Amarillo
     if (collected >= projected) return "green"; // Verde
@@ -98,10 +139,21 @@ export function InsertScreen({ route, navigation }) {
     }
   };
   const handleDateChange = (event, date) => {
-    setShowDatePicker(false);
-    if (date) {
-      setSelectedDate(date);
+    // Si no se selecciona una fecha, simplemente retorna
+    if (event.type === "dismissed") {
+      setShowDatePicker(false);
+      return;
     }
+
+    // Verifica si la fecha seleccionada es menor que la fecha actual
+    const currentDate = new Date();
+    if (date >= currentDate) {
+      setSelectedDate(date);
+    } else {
+      alert("Por favor, elija una fecha igual o posterior a la fecha actual.");
+    }
+
+    setShowDatePicker(false); // Oculta el picker después de seleccionar
   };
   const handleNumberChange = (value) => {
     setNumber(value);
@@ -109,7 +161,6 @@ export function InsertScreen({ route, navigation }) {
   const handleComprobanteChange = (value) => setComprobante(value);
   const handleResultadoChange = (value) => {
     setSelectedResultado(value);
-    console.log("Resultado seleccionado:", value);
   };
 
   const fetchBancos = async () => {
@@ -122,17 +173,21 @@ export function InsertScreen({ route, navigation }) {
   };
 
   useEffect(() => {
-    if (selectedResultado === 61) {
-      fetchBancos();
-      setModalVisible(true); // Abrir modal cuando selectedResultado sea 61
-      setModalVisibleRecojo(false);
-    }
     if (selectedResultado === 60) {
-      setModalVisible(false); // Abrir modal cuando selectedResultado sea 61
-      setModalVisibleRecojo(true); // Abrir modal cuando selectedResultado sea 61
-      console.log("Modal", modalVisibleRecojo);
+      setModalVisible(false); // Cerrar otro modal
+      setModalVisibleRecojo(true); // Abrir modal de recojo
+    } else if (selectedResultado !== 61) {
+      setModalVisibleRecojo(false); // Asegurarse de cerrar el modal si no es 60 o 61
     }
   }, [selectedResultado]);
+
+  useEffect(() => {
+    // Cerrar modal si selectedResultado es 61
+    if (selectedTipoPago === 2) {
+      fetchBancos();
+      setModalVisible(true);
+    }
+  }, [selectedTipoPago]);
 
   const handleImagePicker = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -159,42 +214,177 @@ export function InsertScreen({ route, navigation }) {
       return;
     }
 
-    // Procesa los datos
-    console.log("Datos aceptados:", {
-      selectedBanco,
-      comprobante,
-      number,
-    });
+    // Aquí puedes enviar los datos al servidor
+    const newData = {
+      IdBanco: parseInt(selectedBanco, 10),
+      NumeroDeposito: comprobante,
+      Abono: parseFloat(number),
+      images: images,
+    };
+    setSummitDataTransfer(newData);
     setModalVisible(false);
   };
 
   const handleSave = () => {
-    // Validar campos y manejar datos
+    // Función para mostrar alertas
+    const showAlert = (message) => {
+      setAlertMessage(message);
+      setAlertVisible(true);
+      setAlertIcon("warning");
+      setAlertColor("red");
+    };
+  
+    // Validaciones
     if (
       selectedValue === "" ||
       selectedContactType === "" ||
       selectedResultado === ""
     ) {
-      alert("Seleccione un estado, tipo de contacto y resultado de gestión.");
+      showAlert("Seleccione un estado, tipo de contacto y resultado de gestión.");
       return;
     }
-    if (!selectedResultado) {
-      alert("Por favor, seleccione un resultado de gestión.");
+  
+    if (selectedResultado === 54) {
+      if (number === "") {
+        showAlert("Por favor, ingrese un valor.");
+        return;
+      }
+      if (number <= 0) {
+        showAlert("El valor no puede ser menor o igual a 0.");
+        return;
+      }
+    }
+  
+    if (selectedResultado === 61) {
+      if (selectedTipoPago === "") {
+        showAlert("Seleccione el Tipo de Pago.");
+        return;
+      }
+  
+      if (selectedTipoPago === 1) {
+        if (!number || number === "") {
+          showAlert("Ingrese el valor recibido.");
+          return;
+        }
+        if (number <= 0) {
+          showAlert("El valor no puede ser menor o igual a 0.");
+          return;
+        }
+      }
+  
+      if (selectedTipoPago === 2) {
+        if (!summitDataTransfer.IdBanco) {
+          showAlert("Seleccione el banco.");
+          return;
+        }
+        if (!summitDataTransfer.NumeroDeposito) {
+          showAlert("Ingrese el número de comprobante.");
+          return;
+        }
+        if (!summitDataTransfer.Abono) {
+          showAlert("Ingrese el monto recibido.");
+          return;
+        }
+        if (summitDataTransfer.Abono <= 0) {
+          showAlert("El monto no puede ser menor o igual a 0.");
+          return;
+        }
+        if (summitDataTransfer.images.length === 0) {
+          showAlert("Por favor, cargue al menos una imagen.");
+          return;
+        }
+      }
+    }
+  
+    if (selectedResultado === 60) {
+      if (!submittedDataRecojo || submittedDataRecojo.length === 0) {
+        showAlert("Por favor, complete los datos de recojo.");
+        return;
+      }
+      if (!validateSubmittedData(submittedDataRecojo)) {
+        showAlert("Por favor, complete los datos de recojo.");
+        return;
+      }
+    }
+  
+    if (observations < 10 || observations > 500) {
+      showAlert("La descripción debe tener entre 10 y 500 caracteres.");
       return;
     }
-
-    if(observations[item.idDetCompra].length < 10 || observations[item.idDetCompra].length > 500) {
-      alert("La descripción debe tener entre 10 y 500 caracteres.");
-      return;
-    }
-    
-      // Procesa los datos
-      console.log("Datos guardados:", {
-        selectedResultado,
-        number,
-        selectedDate,
-      });
+  
+    // Guardar datos
+    const data = {
+      idCbo_GestorDeCobranzas: parseInt(item.idCbo_GestorDeCobranzas, 10),
+      idCompra: parseInt(item.idCompra, 10),
+      idPersonal: parseInt(userInfo.ingresoCobrador, 10),
+      Fecha: new Date().toISOString(),
+      idCbo_EstadoGestion: parseInt(selectedValue, 10),
+      idCbo_EstadosTipocontacto: parseInt(selectedContactType, 10),
+      idCbo_ResultadoGestion: parseInt(selectedResultado, 10),
+      Notas: observations,
+      Telefono: "",
+      Valor: parseFloat(number) || 0,
+      FechaPago: selectedResultado === 54 ? selectedDate.toISOString() : "2000-01-01",
+      Usuario: userInfo.Usuario,
+    };
+  
+    setDataGestion(data);
+    setModalVisibleOk(true); // Mostrar el modal de confirmación
+    // handleConfirm(data, summitDataTransfer);
   };
+  
+  
+  const handleConfirm = () => {
+    HandleGuardar(dataGestion, summitDataTransfer); // Guardar los datos
+    setModalVisibleOk(false); // Cerrar el modal
+  };
+  const validateSubmittedData = (data) => {
+    for (const item of data) {
+      const { imagenes, observaciones } = item;
+      // Validar imágenes
+      if (!imagenes || imagenes.length < 3) {
+        setAlertMessage(
+          `El artículo con ID ${item.idDetCompra} debe tener al menos 3 imágenes.`
+        );
+        setAlertVisible(true);
+        setAlertIcon("warning"); // Establece el ícono aquí
+        setAlertColor("red"); // Establece el color del mensaje aquí
+        return false;
+      }
+
+      // Validar observaciones
+      if (!observaciones || observaciones.length < 10) {
+        setAlertMessage(
+          `Las observaciones para el artículo con ID ${item.idDetCompra} deben tener al menos 10 caracteres.`
+        );
+        setAlertVisible(true);
+        setAlertIcon("warning"); // Establece el ícono aquí
+        setAlertColor("red"); // Establece el color del mensaje aquí
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const HandleGuardar = async (data, summitDataTransfer) => {
+    await handleGuardar({
+      data,
+      summitDataTransfer,
+      selectedResultado,
+      selectedTipoPago,
+      item,
+      navigation,
+      userInfo,
+      submittedDataRecojo,
+      setLoading, // Pasar setLoading como argumento
+    });
+  };
+
+  const handleTipoPagoChange = (itemValue) => {
+    setSelectedTipoPago(itemValue); // Actualiza el estado con el valor seleccionado
+    // Aquí puedes agregar lógica adicional si es necesario
+  };
+
   return (
     <ScrollView
       style={styles.container}
@@ -353,6 +543,25 @@ export function InsertScreen({ route, navigation }) {
             </View>
           )}
 
+          {selectedResultado === 61 && (
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={selectedTipoPago}
+                onValueChange={handleTipoPagoChange}
+                style={styles.picker}
+              >
+                <Picker.Item label="Seleccione..." value="" />
+                {TipoPago.map((type) => (
+                  <Picker.Item
+                    key={type.id}
+                    label={type.name}
+                    value={type.id}
+                  />
+                ))}
+              </Picker>
+            </View>
+          )}
+
           <ComprobanteModal
             modalVisible={modalVisible}
             setModalVisible={setModalVisible}
@@ -368,7 +577,7 @@ export function InsertScreen({ route, navigation }) {
             setImages={setImages}
             onAccept={onAccept}
             bancos={bancos} // Pasa los bancos al modal
-            setSelectedResultado={setSelectedResultado}
+            setSelectedTipoPago={setSelectedTipoPago}
           />
           <View
             style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
@@ -393,6 +602,21 @@ export function InsertScreen({ route, navigation }) {
           </View>
         </View>
       ) : null}
+      {selectedTipoPago === 1 && selectedResultado === 61 ? (
+        <View style={styles.calendarContainer}>
+          {/* Contenedor para el campo de valor */}
+          <Icon name="dollar" size={24} color="#333" style={styles.icon} />
+          <View style={{ flex: 1 }}>
+            <TextInput
+              style={styles.input}
+              keyboardType="numeric"
+              value={number}
+              onChangeText={handleNumberChange}
+              placeholder="Ingrese el Valor"
+            />
+          </View>
+        </View>
+      ) : null}
       {selectedResultado ? (
         <View>
           <TextInput
@@ -401,19 +625,31 @@ export function InsertScreen({ route, navigation }) {
             multiline={true} // Permite múltiples líneas
             numberOfLines={4} // Número de líneas visibles
             textAlignVertical="top" // Alineación del texto en la parte superior
-            value={observations[item.idDetCompra] || ""} // Captura el valor actual del estado
+            value={observations}
             onChangeText={(text) => {
-              setObservations((prev) => ({
-                ...prev,
-                [item.idDetCompra]: text, // Actualiza el estado con el texto ingresado
-              }));
+              setObservations(text); // Actualiza el estado con el nuevo texto
             }}
           />
+
           <TouchableOpacity style={styles.button} onPress={handleSave}>
             <Text style={styles.buttonText}>Guardar</Text>
           </TouchableOpacity>
+          <LoadingIndicator visible={loading} />
+          <ConfirmationModal
+            visible={modalVisibleOk}
+            onClose={() => setModalVisibleOk(false)}
+            onConfirm={handleConfirm}
+          />
         </View>
       ) : null}
+      {alertVisible && (
+        <AlertComponent
+          message={alertMessage}
+          color={alertColor} // Establece el color aquí
+          iconName={alertIcon} // Establece el ícono aquí
+          onDismiss={() => setAlertVisible(false)}
+        />
+      )}
     </ScrollView>
   );
 }

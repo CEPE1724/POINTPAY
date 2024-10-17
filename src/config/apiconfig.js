@@ -25,7 +25,11 @@ export const APIURL = {
     Cbo_EstadosGestion : () =>`${API_BASE_URL}Cbo_EstadosGestion/list`,
     getEstadosTipoContacto: (selectedOption) => `${API_BASE_URL}Cbo_EstadosTipocontacto/list?idCbo_EstadoGestion=${selectedOption}`,
     getResultadoGestion: (selectTipoContacto) => `${API_BASE_URL}Cbo_ResultadoGestion/list?idCbo_EstadoGestion=${selectTipoContacto}`,
-    postCbo_GestionesDeCobranzas : () =>`${API_BASE_URL}Cbo_GestionesDeCobranzas/insert`,
+    postCbo_GestionesDeCobranzas : () =>`${API_BASE_URL}AppSave/insert`,
+    postDepositosPendientesAPP : () =>`${API_BASE_URL}AppSave/Deposito`,
     /*api bancos*/
     getBancos : () =>`${API_BASE_URL}SolicitudNCListaProductos/bancos`,
+    postSlack: () => `https://hooks.slack.com/services/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`,
+    postRecojo: () => `${API_BASE_URL}AppSave/Recojo`,
+    postAnticiposAPP: () => `${API_BASE_URL}AppSave/Anticipos`,
 };

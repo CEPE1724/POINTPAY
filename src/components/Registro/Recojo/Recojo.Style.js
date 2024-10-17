@@ -56,6 +56,7 @@ export const styles = StyleSheet.create({
     borderRadius: 4,
     padding: 10,
     marginTop: 5,
+    textTransform: "uppercase",
   },
   uploadButton: {
     flexDirection: "row",
