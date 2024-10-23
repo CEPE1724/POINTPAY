@@ -6,21 +6,28 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
-import { screen } from "../../utils/screenName";
-import { APIURL } from "../../config/apiconfig";
+import { screen } from "../../../utils/screenName";
+import { APIURL } from "../../../config/apiconfig";
 import Icon from "react-native-vector-icons/MaterialIcons";
+import { styles } from "./Dashboard.Style"; // Verifica la ruta
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
+import * as XLSX from 'xlsx';
 
-export function DriveScreen(props) {
+export function Dashboard(props) {
   const { navigation } = props;
+
   const [totalAmount, setTotalAmount] = useState("$0.00");
   const [numberOfClients, setNumberOfClients] = useState(0);
   const [totalProjected, setTotalProjected] = useState(0);
   const [percentageCollected, setPercentageCollected] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [fileName, setFileName] = useState('');
 
   const fetchData = async () => {
     setLoading(true);
@@ -77,7 +84,9 @@ export function DriveScreen(props) {
   };
 
   const gotoRegistro = () => {
-    navigation.navigate(screen.registro.tab, { screen: screen.registro.inicio });
+    navigation.navigate(screen.registro.tab, {
+      screen: screen.registro.inicio,
+    });
   };
 
   const gotoTerreno = () => {
@@ -85,14 +94,105 @@ export function DriveScreen(props) {
   };
 
   const handleNavigate = () => {
-    // Aquí puedes decidir a qué pantalla redirigir
-    gotoRegistro(); // Por ejemplo, redirige a la pantalla de registro
+    gotoRegistro();
   };
 
+  const handlePendientesPress = () => {
+    console.log("Navegando a Pendientes");
+  };
+
+  const handleCompletadosPress = () => {
+    console.log("Navegando a Completados");
+  };
+
+
+
+  const handleImportar = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+  
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const fileUri = result.assets[0].uri;
+  
+        console.log('File URI:', fileUri);
+  
+        const fileData = await FileSystem.readAsStringAsync(fileUri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+  
+        const binaryData = XLSX.read(fileData, { type: 'base64' });
+        const specificSheetName = 'Data'; // Change to your sheet name
+  
+        if (binaryData.SheetNames.includes(specificSheetName)) {
+          const worksheet = binaryData.Sheets[specificSheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet);
+  
+          const filteredData = jsonData.map(row => ({
+            cedula: row.cedula,
+            fecha: row.fecha && !isNaN(row.fecha) 
+              ? XLSX.SSF.format('dd/mm/yyyy', row.fecha)
+              : row.fecha,
+          }));
+  
+          // Count records by fecha
+          const fechaCount = new Map();
+          filteredData.forEach(row => {
+            const date = row.fecha;
+            if (fechaCount.has(date)) {
+              fechaCount.set(date, fechaCount.get(date) + 1);
+            } else {
+              fechaCount.set(date, 1);
+            }
+          });
+  
+          // Prepare the message to show in the alert
+          let countMessage = "Registros por fecha:\n";
+          fechaCount.forEach((count, fecha) => {
+            countMessage += `Fecha: ${fecha}, Cantidad: ${count}\n`;
+          });
+  
+          // Show confirmation dialog
+          Alert.alert(
+            'Confirmar Carga',
+            countMessage + "¿Desea continuar?",
+            [
+              {
+                text: 'Cancelar',
+                onPress: () => console.log('Carga cancelada'),
+                style: 'cancel',
+              },
+              {
+                text: 'Aceptar',
+                onPress: () => {
+                  // Store the data in a variable
+                  const storedData = filteredData;
+                  console.log('Datos almacenados:', storedData);
+                  // You can also use setState here if needed
+                },
+              },
+            ],
+            { cancelable: false }
+          );
+        } else {
+          console.log(`Sheet "${specificSheetName}" not found.`);
+        }
+      } else {
+        console.log('No file selected or selection was canceled.');
+      }
+    } catch (err) {
+      console.error('Error picking or reading document:', err);
+    }
+  };
+  
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        <TouchableOpacity onPress={handleNavigate} style={styles.summaryContainer}>
+        <TouchableOpacity
+          onPress={handleNavigate}
+          style={styles.summaryContainer}
+        >
           <Text style={styles.title}>Resumen de Cobranza</Text>
           <View style={styles.row}>
             <View style={styles.card}>
@@ -136,6 +236,37 @@ export function DriveScreen(props) {
           </View>
         </TouchableOpacity>
 
+        <View style={styles.summaryContainer}>
+          <Text style={styles.title}>Asignación diaria</Text>
+          <View style={styles.row}>
+            <TouchableOpacity
+              onPress={handleImportar}
+              style={[styles.card, styles.clickableCard, styles.pendientesCard]}
+              activeOpacity={0.7}
+            >
+              <View style={styles.iconContainer}>
+                <Icon name="upload" size={24} color="#fff" />
+              </View>
+              <View style={styles.valueContainer}>
+                <Text style={styles.label}>Importar</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleCompletadosPress}
+              style={[styles.card, styles.clickableCard, styles.completadosCard]}
+              activeOpacity={0.7}
+            >
+              <View style={styles.iconContainer}>
+                <Icon name="check-circle" size={24} color="#fff" />
+              </View>
+              <View style={styles.valueContainer}>
+                <Text style={styles.label}>Asignación Manual</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         <TouchableOpacity onPress={gotoTerreno} style={styles.summaryContainer}>
           <Text style={styles.title}>Verificación Terrena</Text>
           <View style={styles.row}>
@@ -159,12 +290,6 @@ export function DriveScreen(props) {
             </View>
           </View>
         </TouchableOpacity>
-
-        <View style={styles.insertButtonContainer}>
-          <TouchableOpacity onPress={goToInsert} style={styles.insertButton}>
-            <Text style={styles.insertButtonText}>Agregar Datos</Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
 
       <TouchableOpacity
@@ -182,92 +307,3 @@ export function DriveScreen(props) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f4f4f4",
-  },
-  scrollViewContent: {
-    paddingBottom: 80,
-  },
-  summaryContainer: {
-    backgroundColor: "#ffffff",
-    margin: 16,
-    padding: 12,
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 8,
-    color: "#1c2463",
-    textAlign: "left",
-  },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  card: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    marginBottom: 6,
-    paddingVertical: 6,
-    flex: 1,
-    marginHorizontal: 4,
-  },
-  iconContainer: {
-    backgroundColor: "#28a745",
-    borderRadius: 5,
-    padding: 8,
-    marginRight: 10,
-  },
-  valueContainer: {
-    flex: 1,
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  summaryValue: {
-    fontSize: 12,
-    color: "#333",
-  },
-  insertButtonContainer: {
-    margin: 16,
-  },
-  insertButton: {
-    backgroundColor: "#1c2463",
-    padding: 10,
-    borderRadius: 5,
-    alignItems: "center",
-  },
-  insertButtonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "bold",
-  },
-  fab: {
-    position: "absolute",
-    bottom: 20,
-    right: 20,
-    width: 56,
-    height: 56,
-    backgroundColor: "#de2317",
-    borderRadius: 28,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 5,
-  },
-});

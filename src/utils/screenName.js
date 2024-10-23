@@ -25,11 +25,16 @@ const terrenoStack = {
     search: "TerrenoSearch",
 }
 
+const gestionDiariaStack = {
+    tab: "GestionDiariaTab",
+    inicio: "GestionDiaria",
+}
 export const screen = {
         drive: driveStack,
         home: homeStack,
         registro: registroStack,
         terreno: terrenoStack,
+        gestionDiaria: gestionDiariaStack,
 
     };
 //navigation.navigate(screen.drive.insert);   para viajar en las mismas pantallas o stack

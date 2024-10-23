@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Gestionstack } from "./Gestionstack";
+import { DashBoardStack } from "./DashBoardStack";
 import { AccountStack } from "./AccountStack";
 import { Registrostack } from "./Registrostack";
 import { Terrenostack } from "./Terrenostack";
@@ -13,6 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { View, StyleSheet, Text, Keyboard } from "react-native";
 import { LocationTracker } from "../components/Location/Location";
 import LocationSender from "../components/Location/LocationSender";
+import { GestionDiariaStack } from "./GestionDiariaStack";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -60,13 +61,18 @@ const TabNavigator = () => {
       >
         <Tab.Screen
           name={screen.drive.tab}
-          component={Gestionstack}
+          component={DashBoardStack}
           options={{ title: "Inicio" }}
         />
         <Tab.Screen
           name={screen.registro.tab}
           component={Registrostack}
           options={{ title: "Registros" }}
+        />
+        <Tab.Screen
+          name={screen.gestionDiaria.tab}
+          component={GestionDiariaStack}
+          options={{ title: "Gestión Diaria" }}
         />
         <Tab.Screen
           name={screen.terreno.tab}
@@ -96,6 +102,8 @@ function renderIcon(route, color, size, focused) {
     iconName = "book";
   } else if (route.name === screen.terreno.tab) {
     iconName = "terrain";
+  }else if (route.name === screen.gestionDiaria.tab) {
+    iconName = "calendar-today";
   }
 
   return (
@@ -125,6 +133,8 @@ function renderLabel(route) {
       return "Registros";
     case screen.terreno.tab:
       return "Terreno";
+    case screen.gestionDiaria.tab:
+      return "Diaria";
     default:
       return "";
   }

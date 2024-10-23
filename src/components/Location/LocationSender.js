@@ -4,22 +4,20 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { APIURL } from '../../config/apiconfig';
 import io from 'socket.io-client';
 import NetInfo from '@react-native-community/netinfo';
+import { useUserContext } from '../../context/UserContext';
 
 const LocationSender = () => {
+  const { isLoggedIn } = useUserContext();
   const [lastLocation, setLastLocation] = useState(null);
-  const [isConnected, setIsConnected] = useState(true); // Estado de conexión
+  const [isConnected, setIsConnected] = useState(true);
   const socketRef = useRef(null);
   const subscriptionRef = useRef(null);
 
   const debounce = (func, wait) => {
     let timeout;
     return function executedFunction(...args) {
-      const later = () => {
-        clearTimeout(timeout);
-        func(...args);
-      };
       clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
+      timeout = setTimeout(() => func(...args), wait);
     };
   };
 
@@ -30,12 +28,17 @@ const LocationSender = () => {
       return;
     }
 
+    if (!isLoggedIn) {
+      console.log('Usuario no logueado, no se enviará la ubicación.');
+      return;
+    }
+
     try {
       const storedUserInfo = await AsyncStorage.getItem("userInfo");
       const userInfo = storedUserInfo ? JSON.parse(storedUserInfo) : {};
-      const idUser = userInfo.ingresoCobrador ? userInfo.ingresoCobrador.idIngresoCobrador : null;
+      const idUser = userInfo.ingresoCobrador?.idIngresoCobrador || null;
 
-      if (!idUser || !newLocation || !newLocation.coords) {
+      if (!idUser || !newLocation?.coords) {
         console.error('Datos inválidos, no se enviará la ubicación.');
         return;
       }
@@ -53,7 +56,6 @@ const LocationSender = () => {
           longitude: newLocation.coords.longitude,
         }),
       });
-
       if (!response.ok) {
         throw new Error('Error en la solicitud');
       }
@@ -64,7 +66,6 @@ const LocationSender = () => {
       await saveLocationToStorage(newLocation);
     }
   };
-
   const saveLocationToStorage = async (newLocation) => {
     try {
       const storedLocations = await AsyncStorage.getItem('offlineLocations');
@@ -81,39 +82,30 @@ const LocationSender = () => {
   };
 
   const saveLocation = debounce((newLocation) => {
-    console.log('Guardando ubicación sin cambios:', newLocation);
+    console.log('Guardando ubicación:', newLocation);
     sendLocationToApi(newLocation);
     setLastLocation(newLocation);
   }, 3000);
 
   useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener(state => {
-      setIsConnected(state.isConnected); // Actualiza el estado de conexión
-      console.log("Conexión a Internet:", state.isConnected);
+    const unsubscribeNetInfo = NetInfo.addEventListener(state => {
+      setIsConnected(state.isConnected);
     });
 
-    try {
+    const initializeSocket = () => {
       socketRef.current = io(APIURL.socketEndpoint());
-      console.log('Conectando al servidor de sockets...');
-    } catch (error) {
-      console.error('Error al inicializar el socket:', error);
-    }
-
-    const connectSocket = () => {
-      socketRef.current.on('connect', () => {
-        console.log('Conectado al servidor de sockets');
-      });
-
-      socketRef.current.on('connect_error', (error) => {
-        console.error('Error de conexión de socket:', error);
-      });
+      socketRef.current.on('connect', () => console.log('Conectado al servidor de sockets'));
+      socketRef.current.on('connect_error', (error) => console.error('Error de conexión de socket:', error));
     };
 
-    connectSocket();
+    initializeSocket();
 
     const getLocationUpdates = async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') return;
+      if (status !== 'granted') {
+        console.error('Permisos de ubicación no concedidos');
+        return;
+      }
 
       subscriptionRef.current = await Location.watchPositionAsync(
         {
@@ -134,11 +126,7 @@ const LocationSender = () => {
       if (storedLocations) {
         const locations = JSON.parse(storedLocations);
         for (const loc of locations) {
-          try {
-            await sendLocationToApi(loc);
-          } catch (error) {
-            console.error('Error enviando ubicación almacenada:', error);
-          }
+          await sendLocationToApi(loc).catch(error => console.error('Error enviando ubicación almacenada:', error));
         }
         await AsyncStorage.removeItem('offlineLocations');
       }
@@ -147,13 +135,13 @@ const LocationSender = () => {
     sendStoredLocations();
 
     return () => {
-      unsubscribe(); // Limpiar el listener de conectividad
+      unsubscribeNetInfo();
       if (subscriptionRef.current) {
         subscriptionRef.current.remove();
       }
       socketRef.current.disconnect();
     };
-  }, []);
+  }, [isLoggedIn]);
 
   return null; // No renderiza nada
 };

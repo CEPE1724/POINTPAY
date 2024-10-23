@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import axios from "axios";
 import { styles } from "./RegistroScreenStyle"; // Verifica el path
-import { useNavigation } from "@react-navigation/native";
 import { screen } from "../../../utils/screenName";
 import { APIURL } from "../../../config/apiconfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";

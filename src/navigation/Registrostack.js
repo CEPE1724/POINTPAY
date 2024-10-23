@@ -1,5 +1,4 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { DriveScreen } from "../screens/gestioncobrador/DriveScreen";
 import { RegistroScreen } from "../screens/registros/resgistroScreen/RegistroScreen";
 import { InsertScreen } from "../screens/registros/insertScreen";
 import { ViewProductos } from "../screens/registros/viewProductos";

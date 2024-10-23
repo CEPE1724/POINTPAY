@@ -1,11 +1,11 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { DriveScreen } from "../screens/gestioncobrador/DriveScreen";
-import {InsertGestionscreen} from "../screens/gestioncobrador/InsertGestionscreen";
+import { Dashboard } from "../screens/Dashboard/DashBoardScreen";
+import {InsertGestionscreen} from "../screens/Dashboard/InsertGestionscreen";
 import { screen } from "../utils";
 
 const Stack = createNativeStackNavigator();
 
-export function Gestionstack()  {
+export function DashBoardStack()  {
   return (
     <Stack.Navigator
       screenOptions={{
@@ -15,7 +15,7 @@ export function Gestionstack()  {
     >
       <Stack.Screen 
         name={screen.drive.inicio} 
-        component={DriveScreen} 
+        component={Dashboard} 
         options={{ title: "Dashboard" }}
       />
       <Stack.Screen 
