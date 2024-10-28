@@ -13,5 +13,23 @@ export const styles = StyleSheet.create({
         textAlign: 'center',
         color: '#333',
       },
+      // Add styles for the button and header container
+
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  refreshButton: {
+    backgroundColor: '#007BFF',
+    padding: 10,
+    borderRadius: 5,
+  },
+  refreshButtonText: {
+    color: '#FFFFFF',
+  },
+
+
 });
 

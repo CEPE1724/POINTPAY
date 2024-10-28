@@ -1,31 +1,50 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons'; // Asegúrate de tener esta biblioteca instalada
-
-import { styles } from './DayCard.Style'; // Asegúrate de importar los estilos
-export function DayCard  ({ day, onPress }) {
+import { FontAwesome } from '@expo/vector-icons';
+import { styles } from './DayCard.Style'; // Import the styles
+import { screen } from "../../../utils/screenName";
+export function DayCard({ day, isCurrent, gestionado, total, onPress }) {
   const currentDate = new Date();
   const cardColor = getCardColor(day, currentDate.getDate());
+  const NoGestionado = total - gestionado;
+  const isTouchable = total > 0; // Determine if the card should be touchable
+
 
   return (
-    <TouchableOpacity style={[styles.card, { backgroundColor: cardColor }]}>
+    <TouchableOpacity 
+      style={[styles.card, { backgroundColor: cardColor }]} 
+      onPress={isTouchable ? onPress : null} 
+      disabled={!isTouchable} 
+    >
       <View style={styles.cardContent}>
-        <FontAwesome name="calendar" size={24} color="#fff" />
         <Text style={styles.dayText}>{day}</Text>
+        <FontAwesome name="calendar" size={24} color="#fff" />
+
+        <View style={styles.infoContainer}>
+          <FontAwesome name="user-circle" size={16} color="#fff" />
+          <Text style={styles.totalText}>{`N° Gestiones: ${total}`}</Text>
+        </View>
+
+        <View style={styles.infoContainer}>
+          <FontAwesome name="check-circle" size={16} color="green" />
+          <Text style={styles.gestionadoText}>{`Gestionados: ${gestionado}`}</Text>
+        </View>
+
+        <View style={styles.infoContainer}>
+          <FontAwesome name="exclamation-circle" size={16} color="red" />
+          <Text style={styles.gestionadoText}>{`Sin Gestionar: ${NoGestionado}`}</Text>
+        </View>
       </View>
     </TouchableOpacity>
   );
 };
+
 const getCardColor = (day, currentDay) => {
-  const today = new Date().getDate();
-  if (day < today) {
-    return '#d1d1d1'; // Color para días pasados
-  } else if (day === today) {
-    return '#4CAF50'; // Color para el día actual
+  if (day < currentDay) {
+    return '#d1d1d1'; // Color for past days
+  } else if (day === currentDay) {
+    return '#4CAF50'; // Color for current day
   } else {
-    return '#2196F3'; // Color para días futuros
+    return '#2196F3'; // Color for future days
   }
 };
-
-
-

@@ -15,19 +15,22 @@ import { screen } from "../../../utils/screenName";
 import { APIURL } from "../../../config/apiconfig";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { styles } from "./Dashboard.Style"; // Verifica la ruta
-import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
-import * as XLSX from 'xlsx';
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system";
+import * as XLSX from "xlsx";
+import { useUserContext } from "../../../context/UserContext";
+
 
 export function Dashboard(props) {
   const { navigation } = props;
-
+  const { user } = useUserContext();
   const [totalAmount, setTotalAmount] = useState("$0.00");
   const [numberOfClients, setNumberOfClients] = useState(0);
   const [totalProjected, setTotalProjected] = useState(0);
   const [percentageCollected, setPercentageCollected] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [fileName, setFileName] = useState('');
+  const [fileName, setFileName] = useState("");
+  const [savingData, setSavingData] = useState(false); // Estado para manejar carga de guardar datos
 
   const fetchData = async () => {
     setLoading(true);
@@ -105,40 +108,97 @@ export function Dashboard(props) {
     console.log("Navegando a Completados");
   };
 
+  const SaveGestion = async (clientes) => {
+    setSavingData(true); // Inicia la carga
+    console.log("datos gestion Fechas", clientes);
+    const url = APIURL.postGestiondiaria();
+    const clientesTransformados = clientes.map((cliente) => {
+      const [day, month, year] = cliente.fecha.split("/"); // Separar por '/'
+      const formattedDate = `${year}-${month}-${day}`; // Formatear a 'YYYY-MM-DD'
 
+      return {
+        Cedula: cliente.cedula,
+        Dia: formattedDate, // Usar la fecha formateada
+      };
+    });
+
+    const data = {
+      Users: user.Nombre,
+      Usuario: user.Nombre,
+      Compromiso: 0,
+      idCobrador: user.ingresoCobrador.idIngresoCobrador,
+      clientes: clientesTransformados,
+    };
+
+    try {
+      const response = await axios.post(url, data);
+      console.log("respuesta", response.data);
+
+      const {
+        total,
+        insertados,
+        errores,
+        registrosSinIdCompra,
+        detallesErrores,
+      } = response.data;
+
+      // Crear mensaje para el alert
+      let alertMessage = `Total registros: ${total}\n`;
+      alertMessage += `Insertados: ${insertados}\n`;
+      alertMessage += `Errores: ${errores}\n`;
+      alertMessage += `Registros sin ID de compra: ${registrosSinIdCompra}\n`;
+
+      if (detallesErrores.length > 0) {
+        alertMessage += "Detalles de errores:\n";
+        detallesErrores.forEach((error) => {
+          alertMessage += `Cédula: ${error.Cedula}, Mensaje: ${error.message}\n`;
+        });
+      }
+
+      alert(alertMessage);
+    } catch (error) {
+      console.error("Error en la petición:", error);
+      alert("Ocurrió un error al guardar los datos.");
+    } finally {
+      setSavingData(false); // Finaliza la carga
+    }
+
+    console.log("Navegando a SaveGestion");
+  };
 
   const handleImportar = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
-  
+
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const fileUri = result.assets[0].uri;
-  
-        console.log('File URI:', fileUri);
-  
+
+        console.log("File URI:", fileUri);
+
         const fileData = await FileSystem.readAsStringAsync(fileUri, {
           encoding: FileSystem.EncodingType.Base64,
         });
-  
-        const binaryData = XLSX.read(fileData, { type: 'base64' });
-        const specificSheetName = 'Data'; // Change to your sheet name
-  
+
+        const binaryData = XLSX.read(fileData, { type: "base64" });
+        const specificSheetName = "Data"; // Change to your sheet name
+
         if (binaryData.SheetNames.includes(specificSheetName)) {
           const worksheet = binaryData.Sheets[specificSheetName];
           const jsonData = XLSX.utils.sheet_to_json(worksheet);
-  
-          const filteredData = jsonData.map(row => ({
+
+          const filteredData = jsonData.map((row) => ({
             cedula: row.cedula,
-            fecha: row.fecha && !isNaN(row.fecha) 
-              ? XLSX.SSF.format('dd/mm/yyyy', row.fecha)
-              : row.fecha,
+            fecha:
+              row.fecha && !isNaN(row.fecha)
+                ? XLSX.SSF.format("dd/mm/yyyy", row.fecha)
+                : row.fecha,
           }));
-  
+
           // Count records by fecha
           const fechaCount = new Map();
-          filteredData.forEach(row => {
+          filteredData.forEach((row) => {
             const date = row.fecha;
             if (fechaCount.has(date)) {
               fechaCount.set(date, fechaCount.get(date) + 1);
@@ -146,29 +206,29 @@ export function Dashboard(props) {
               fechaCount.set(date, 1);
             }
           });
-  
+
           // Prepare the message to show in the alert
           let countMessage = "Registros por fecha:\n";
           fechaCount.forEach((count, fecha) => {
             countMessage += `Fecha: ${fecha}, Cantidad: ${count}\n`;
           });
-  
+
           // Show confirmation dialog
           Alert.alert(
-            'Confirmar Carga',
+            "Confirmar Carga",
             countMessage + "¿Desea continuar?",
             [
               {
-                text: 'Cancelar',
-                onPress: () => console.log('Carga cancelada'),
-                style: 'cancel',
+                text: "Cancelar",
+                onPress: () => console.log("Carga cancelada"),
+                style: "cancel",
               },
               {
-                text: 'Aceptar',
+                text: "Aceptar",
                 onPress: () => {
                   // Store the data in a variable
                   const storedData = filteredData;
-                  console.log('Datos almacenados:', storedData);
+                  SaveGestion(storedData);
                   // You can also use setState here if needed
                 },
               },
@@ -179,13 +239,13 @@ export function Dashboard(props) {
           console.log(`Sheet "${specificSheetName}" not found.`);
         }
       } else {
-        console.log('No file selected or selection was canceled.');
+        console.log("No file selected or selection was canceled.");
       }
     } catch (err) {
-      console.error('Error picking or reading document:', err);
+      console.error("Error picking or reading document:", err);
     }
   };
-  
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
@@ -254,7 +314,11 @@ export function Dashboard(props) {
 
             <TouchableOpacity
               onPress={handleCompletadosPress}
-              style={[styles.card, styles.clickableCard, styles.completadosCard]}
+              style={[
+                styles.card,
+                styles.clickableCard,
+                styles.completadosCard,
+              ]}
               activeOpacity={0.7}
             >
               <View style={styles.iconContainer}>
@@ -292,6 +356,13 @@ export function Dashboard(props) {
         </TouchableOpacity>
       </ScrollView>
 
+      {savingData && ( // Mostrar el ActivityIndicator si savingData es true
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#000" />
+          <Text>Cargando...</Text>
+        </View>
+      )}
+
       <TouchableOpacity
         style={styles.fab}
         onPress={handleRefresh}
@@ -307,3 +378,5 @@ export function Dashboard(props) {
     </View>
   );
 }
+
+

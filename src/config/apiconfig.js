@@ -32,4 +32,7 @@ export const APIURL = {
     postSlack: () => `https://hooks.slack.com/services/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`,
     postRecojo: () => `${API_BASE_URL}AppSave/Recojo`,
     postAnticiposAPP: () => `${API_BASE_URL}AppSave/Anticipos`,
+    postGestiondiaria: ()=> `${API_BASE_URL}GestionDiaria/list`,
+    postGestiondiariaId: () => `${API_BASE_URL}GestionDiaria/allGestionId`, 
+    getAllGestionDiaria : () =>`${API_BASE_URL}GestionDiaria/allGestion`,
 };

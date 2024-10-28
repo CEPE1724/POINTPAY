@@ -1,5 +1,6 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Calendario } from "../screens/GestionDiaria/Calendario/Calendario";
+import {GestionCalenadrio} from "../screens/GestionDiaria/GestionCalendario/GestionCalendario";
 import { screen } from "../utils";
 
 const Stack = createNativeStackNavigator();
@@ -16,6 +17,11 @@ export function GestionDiariaStack()  {
         name={screen.gestionDiaria.inicio} 
         component={Calendario} 
         options={{ title: "Gestión Diaria" }}
+      />
+      <Stack.Screen 
+        name={screen.gestionDiaria.diaria} 
+        component={GestionCalenadrio} 
+        options={{ title: "Diaria" }}
       />
     </Stack.Navigator>
   );

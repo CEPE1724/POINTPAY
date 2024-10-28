@@ -28,6 +28,7 @@ const terrenoStack = {
 const gestionDiariaStack = {
     tab: "GestionDiariaTab",
     inicio: "GestionDiaria",
+    diaria: "Diaria",
 }
 export const screen = {
         drive: driveStack,

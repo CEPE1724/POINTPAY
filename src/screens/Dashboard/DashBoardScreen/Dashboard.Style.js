@@ -96,4 +96,14 @@ export const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 1.5,
       },
+      loadingContainer: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "rgba(255, 255, 255, 0.7)", // Fondo semi-transparente
+      },
     });
