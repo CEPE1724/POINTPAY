@@ -13,7 +13,7 @@ export function Calendario(props) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const numColumns = 2; // Set your desired number of columns here
-
+  console.log (user);
   // Fetch data function
   const fetchData = async () => {
     try {
